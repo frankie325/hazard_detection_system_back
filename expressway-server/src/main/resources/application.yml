@@ -1,0 +1,26 @@
+# 配置数据库连接信息
+spring:
+  application:
+    name: sky-take-out
+  datasource:
+    url: jdbc:mysql://localhost:3306/highway_emergency_system?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&zeroDateTimeBehavior=convertToNull&useSSL=false&allowPublicKeyRetrieval=true
+    username: root
+    password: 123456
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  servlet:
+    multipart:
+      max-file-size: 1MB # 最大单个文件大小
+      max-request-size: 10MB # 最大请求大小（包括所有文件和表单数据）
+
+# mybatis相关配置
+mybatis:
+  # mapper 配置文件路径
+  mapper-locations: classpath:mapper/*.xml
+  # 实体类别名扫描包
+  type-aliases-package: com.sky.entity
+  # 其他配置项
+  configuration:
+    # 开启 SQL 日志打印到控制台
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    # 开启驼峰命名自动转换, 如：user_name -> userName
+    map-underscore-to-camel-case: true
