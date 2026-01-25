@@ -2,11 +2,13 @@ package com.expressway.handler;
 
 import com.expressway.exception.BusinessException;
 import com.expressway.result.Result;
-import jakarta.security.auth.message.AuthException;
+import com.expressway.exception.AuthException;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import java.util.List;
 
@@ -18,6 +20,7 @@ import java.util.List;
 public class GlobalExceptionHandler {
 
     // 认证异常处理
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
     @ExceptionHandler(AuthException.class)
     public Result<Void> handleAuthException(AuthException e) {
         log.error("认证异常：{}", e.getMessage());
@@ -42,6 +45,7 @@ public class GlobalExceptionHandler {
 
     // 通用异常处理
     @ExceptionHandler(Exception.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public Result<Void> handleException(Exception e) {
         log.error("系统异常：", e);
         return Result.error("系统异常，请联系管理员");
