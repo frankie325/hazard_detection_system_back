@@ -18,7 +18,7 @@ import java.util.List;
  * 处理部门相关HTTP请求，遵循RESTful风格
  */
 @RestController
-@RequestMapping("/api/dept")
+@RequestMapping("/user/sys/dept")
 public class SysDeptController {
 
     @Resource

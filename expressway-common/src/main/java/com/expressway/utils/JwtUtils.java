@@ -1,12 +1,14 @@
 package com.expressway.utils;
 
 import com.expressway.constant.AuthConstant;
+import com.expressway.constant.JwtClaimsConstant;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -17,9 +19,15 @@ public class JwtUtils {
     /**
      * 生成令牌（传入用户名作为核心标识）
      */
-    public static String generateToken(String secretKey, String username) {
+    public static String generateToken(String secretKey, Long userId, String username) {
+        // 1. 构建自定义Claims（存储用户ID、用户名等信息）
+        Map<String, Object> claims = new HashMap<>();
+        claims.put(JwtClaimsConstant.USER_ID, userId); // 存入用户ID（关键！）
+        claims.put(JwtClaimsConstant.USERNAME, username); // 存入用户名
+
         return Jwts.builder()
-                .setSubject(username) // 存储用户名
+                .setClaims(claims) // 设置自定义Claims
+                .setSubject(username) // 保留subject字段（可选，和自定义字段不冲突）
                 .setIssuedAt(new Date()) // 签发时间
                 .setExpiration(new Date(System.currentTimeMillis() + AuthConstant.TOKEN_EXPIRE)) // 过期时间
                 .signWith(SignatureAlgorithm.HS256, secretKey.getBytes(StandardCharsets.UTF_8)) // 签名加密

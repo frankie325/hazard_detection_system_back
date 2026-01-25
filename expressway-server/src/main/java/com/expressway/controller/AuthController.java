@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
  * 登录登出认证接口
  */
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping("/user/auth")
 @Slf4j
 public class AuthController {
 

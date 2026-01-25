@@ -39,7 +39,7 @@ public class SysUserServiceImpl implements SysUserService {
         }
 
         // 3. 生成JWT令牌
-        String token = JwtUtils.generateToken(SECRET_KEY, sysUser.getUsername());
+        String token = JwtUtils.generateToken(SECRET_KEY, sysUser.getId(), sysUser.getUsername());
 
         // 4. 封装用户信息VO（拷贝实体属性，关联部门/角色名称）
         UserLoginVO userLoginVO = new UserLoginVO();

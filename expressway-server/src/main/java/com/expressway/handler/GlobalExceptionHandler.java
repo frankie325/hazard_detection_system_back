@@ -1,10 +1,12 @@
 package com.expressway.handler;
 
+import com.expressway.NotLoginException;
 import com.expressway.exception.BusinessException;
 import com.expressway.result.Result;
 import com.expressway.exception.AuthException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -41,6 +43,14 @@ public class GlobalExceptionHandler {
         String msg = errors.get(0).getDefaultMessage(); // 取第一个错误信息
         log.error("参数校验异常：{}", msg);
         return Result.error(msg);
+    }
+
+    // 未登录异常
+    @ExceptionHandler(NotLoginException.class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    public Result<Void> handleNotLoginException(NotLoginException e){
+        log.error("用户登录异常：", e);
+        return Result.error(e.getMessage());
     }
 
     // 通用异常处理
