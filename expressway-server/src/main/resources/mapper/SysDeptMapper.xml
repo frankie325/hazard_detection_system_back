@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.expressway.mapper.SysDeptMapper">
+    <!-- 新增部门 -->
+    <insert id="insertDept" parameterType="com.expressway.entity.SysDept">
+        INSERT INTO sys_dept (parent_id, dept_name, dept_code, description, create_time, update_time)
+        VALUES (#{parentId}, #{deptName}, #{deptCode}, #{description}, NOW(), NOW())
+    </insert>
+
+    <!-- 根据ID更新部门 -->
+    <update id="updateDeptById" parameterType="com.expressway.entity.SysDept">
+        UPDATE sys_dept
+        <set>
+            <if test="parentId != null">parent_id = #{parentId},</if>
+            <if test="deptName != null and deptName != ''">dept_name = #{deptName},</if>
+            <if test="deptCode != null">dept_code = #{deptCode},</if>
+            <if test="description != null">description = #{description},</if>
+            update_time = NOW()
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <!-- 根据ID删除部门 -->
+    <delete id="deleteDeptById" parameterType="java.lang.Long">
+        DELETE FROM sys_dept WHERE id = #{id}
+    </delete>
+
+    <!-- 批量删除部门 -->
+    <delete id="batchDeleteDept" parameterType="java.util.List">
+        DELETE FROM sys_dept WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <!-- 根据ID查询部门 -->
+    <select id="selectDeptById" parameterType="java.lang.Long" resultType="com.expressway.entity.SysDept">
+        SELECT * FROM sys_dept WHERE id = #{id}
+    </select>
+
+    <!-- 查询所有部门（平级） -->
+    <select id="selectAllDept" resultType="com.expressway.entity.SysDept">
+        SELECT * FROM sys_dept ORDER BY parent_id, id
+    </select>
+
+    <!-- 根据上级部门ID查询子部门 -->
+    <select id="selectDeptByParentId" parameterType="java.lang.Long" resultType="com.expressway.entity.SysDept">
+        SELECT * FROM sys_dept WHERE parent_id = #{parentId} ORDER BY id
+    </select>
+
+    <!-- 检查部门是否存在子部门 -->
+    <select id="countChildrenByParentId" parameterType="java.lang.Long" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM sys_dept WHERE parent_id = #{parentId}
+    </select>
+</mapper>
