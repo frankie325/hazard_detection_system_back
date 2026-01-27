@@ -2,8 +2,55 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
 <mapper namespace="com.expressway.mapper.SysAreaMapper">
-    <!-- 查询所有区域  -->
+    <!-- 查询所有区域 -->
     <select id="selectAllArea" resultType="com.expressway.entity.SysArea">
-        SELECT * FROM sys_area ORDER BY  dept_id, id
+        SELECT * FROM sys_area ORDER BY dept_id, id
+    </select>
+
+    <!-- 根据ID查询区域 -->
+    <select id="selectAreaById" resultType="com.expressway.entity.SysArea">
+        SELECT * FROM sys_area WHERE id = #{id}
+    </select>
+
+    <!-- 新增区域 -->
+    <insert id="insertArea" parameterType="com.expressway.entity.SysArea" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO sys_area (parent_id, area_name, dept_id, length, lane_count, coordinates, create_time, update_time)
+        VALUES (#{parentId}, #{areaName}, #{deptId}, #{length}, #{laneCount}, #{coordinates}, NOW(), NOW())
+    </insert>
+
+    <!-- 更新区域 -->
+    <update id="updateAreaById" parameterType="com.expressway.entity.SysArea">
+        UPDATE sys_area
+        SET parent_id = #{parentId},
+            area_name = #{areaName},
+            dept_id = #{deptId},
+            length = #{length},
+            lane_count = #{laneCount},
+            coordinates = #{coordinates},
+            update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <!-- 根据ID删除区域 -->
+    <delete id="deleteAreaById">
+        DELETE FROM sys_area WHERE id = #{id}
+    </delete>
+
+    <!-- 批量删除区域 -->
+    <delete id="batchDeleteArea">
+        DELETE FROM sys_area WHERE id IN
+        <foreach collection="list" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <!-- 根据部门ID查询区域数量 -->
+    <select id="countAreaByDeptId" resultType="int">
+        SELECT COUNT(*) FROM sys_area WHERE dept_id = #{deptId}
+    </select>
+
+    <!-- 根据父ID查询子区域 -->
+    <select id="selectAreaByParentId" resultType="com.expressway.entity.SysArea">
+        SELECT * FROM sys_area WHERE parent_id = #{parentId} ORDER BY id
     </select>
 </mapper>
