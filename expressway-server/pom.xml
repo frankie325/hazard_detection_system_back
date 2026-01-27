@@ -8,42 +8,47 @@
         <version>0.0.1-SNAPSHOT</version>
     </parent>
     <artifactId>expressway-server</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
     <name>expressway-server</name>
-    <description>expressway-server</description>
+    <description>Server模块（Spring Boot应用）</description>
 
     <properties>
         <java.version>21</java.version>
-        <!-- Swagger 2 版本适配 Spring Boot 3 -->
         <springfox.version>3.0.0</springfox.version>
+        <mybatis.version>3.0.3</mybatis.version>
     </properties>
 
     <dependencies>
-
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-actuator</artifactId>
-        </dependency>
-
-        <!-- Spring Boot Web 核心依赖 -->
+        <!-- Spring Boot Web核心 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
-        <!-- 引入自定义的 common 和 pojo 模块 -->
-        <dependency>
-            <groupId>com.expressway</groupId>
-            <artifactId>expressway-common</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
-        </dependency>
+        <!-- 自定义模块依赖 -->
         <dependency>
             <groupId>com.expressway</groupId>
             <artifactId>expressway-pojo</artifactId>
             <version>0.0.1-SNAPSHOT</version>
         </dependency>
+        <dependency>
+            <groupId>com.expressway</groupId>
+            <artifactId>expressway-common</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+        </dependency>
 
-        <!-- Swagger 2 (springfox) 依赖 - 解决 Docket 等类找不到的问题 -->
+        <!-- MyBatis（解决Mapper编译问题） -->
+        <dependency>
+            <groupId>org.mybatis.spring.boot</groupId>
+            <artifactId>mybatis-spring-boot-starter</artifactId>
+            <version>${mybatis.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- Swagger 2（解决Docket等类找不到问题） -->
         <dependency>
             <groupId>io.springfox</groupId>
             <artifactId>springfox-boot-starter</artifactId>
@@ -70,29 +75,14 @@
 
     <build>
         <plugins>
-            <!-- Spring Boot 打包插件（应用模块专属） -->
+            <!-- Spring Boot打包插件（应用模块必需） -->
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>repackage</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>repackage</goal>
-                        </goals>
-                    </execution>
-                </executions>
                 <configuration>
-                    <excludes>
-                        <exclude>
-                            <groupId>org.projectlombok</groupId>
-                            <artifactId>lombok</artifactId>
-                        </exclude>
-                    </excludes>
+                    <mainClass>com.expressway.ExpresswayServerApplication</mainClass>
                 </configuration>
             </plugin>
-
             <!-- 编译器插件 -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
