@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>登录</title>
+  <link rel="icon" href="../assets/logo-hrecs-radar.svg" type="image/svg+xml">
+  <!-- Ant Design Vue 基础样式 -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ant-design-vue@3.2.15/dist/antd.min.css">
+  <style>
+    :root {
+      --card-radius: 24px;
+    }
+    body { margin:0; background: #f5f7fb; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', 'PingFang SC', 'Microsoft YaHei', sans-serif; }
+    .page-wrap { min-height: 100vh; display:flex; align-items:center; justify-content:center; padding: 24px; }
+    .login-container {
+      width: min(1100px, 95vw);
+      background: #fff;
+      border-radius: var(--card-radius);
+      box-shadow: 0 30px 60px rgba(0,0,0,.12);
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* 左侧登录框区域 */
+    .login-left {
+      position: relative;
+      padding: 40px 48px;
+      background:
+        radial-gradient(1200px 500px at -200px 50%, rgba(255,200,255,.35), transparent 60%),
+        radial-gradient(600px 300px at 80% 0%, rgba(170,200,255,.35), transparent 60%),
+        #ffffff;
+    }
+    .logo { display:flex; justify-content:center; align-items:center; margin-bottom: 24px; }
+    .logo-img { width:72px; height:72px; border-radius: 16px; object-fit: contain; box-shadow: 0 6px 16px rgba(99,102,241,.20); }
+
+    .login-title { text-align:left; font-size:22px; font-weight:600; color:#111827; margin: 12px 0 24px; }
+
+    .form-item { margin-bottom: 16px; }
+    .form-item label { display:block; font-size: 13px; color:#374151; margin-bottom: 8px; }
+    .ant-input { height: 40px; }
+
+    .remember-row { display:flex; align-items:center; justify-content:space-between; margin: 6px 0 16px; }
+    .ant-checkbox-wrapper { user-select:none; }
+
+    .submit-btn { width:100%; height:42px; border-radius: 8px; }
+
+    /* 右侧配图区域 */
+    .login-right {
+      background: #fff; display:flex; align-items:center; justify-content:center; position:relative; padding: 24px;
+    }
+    .right-inner {
+      width: 100%; height: 100%; border-radius: calc(var(--card-radius) - 8px); border:1px solid #e5e7eb; overflow:hidden; position:relative;
+      background:
+        radial-gradient(500px 300px at 20% 20%, rgba(236, 72, 153, .20), transparent 55%),
+        radial-gradient(400px 250px at 80% 30%, rgba(99, 102, 241, .18), transparent 60%),
+        #fff;
+    }
+    .right-inner img { width:100%; height:100%; object-fit: cover; opacity: .95; }
+
+    /* 响应式 */
+    @media (max-width: 900px) {
+      .login-container { grid-template-columns: 1fr; }
+      .login-right { display:none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page-wrap">
+    <div class="login-container">
+      <!-- 左侧：登录框 -->
+      <div class="login-left">
+        <div class="logo">
+          <img src="../assets/logo-hrecs-radar.svg" alt="系统Logo" class="logo-img">
+        </div>
+        <div class="login-title">欢迎回来</div>
+        <form>
+          <div class="form-item">
+            <label for="username">用户名</label>
+            <input id="username" type="text" class="ant-input" placeholder="请输入用户名" />
+          </div>
+          <div class="form-item">
+            <label for="password">密码</label>
+            <input id="password" type="password" class="ant-input" placeholder="请输入密码" />
+          </div>
+          <div class="remember-row">
+            <label class="ant-checkbox-wrapper"><input type="checkbox" class="ant-checkbox" /> 记住我</label>
+            <a href="#" class="ant-typography" style="color:#6366f1">忘记密码？</a>
+          </div>
+          <button type="submit" class="ant-btn ant-btn-primary submit-btn">登 录</button>
+        </form>
+      </div>
+
+      <!-- 右侧：系统主题相关的图片（Unsplash/Pexels） -->
+      <div class="login-right">
+        <div class="right-inner">
+          <img src="https://images.unsplash.com/photo-1543946602-777bf82c1fcb?auto=format&fit=crop&w=1600&q=80" alt="Theme Illustration" />
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

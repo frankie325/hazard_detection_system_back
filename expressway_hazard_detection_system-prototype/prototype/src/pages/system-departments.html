@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>系统管理 · 部门管理</title>
+  <link rel="icon" href="../assets/logo-hrecs-radar.svg" type="image/svg+xml">
+  <!-- 基础样式与图标库 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <script src="../components/app-layout.js"></script>
+  <style>
+    :root {
+      --blue-6: #2F54EB; /* 现代简约蓝 */
+      --blue-5: #3B6AE8;
+      --blue-4: #5C85F5;
+      --text-strong: #1f2937;
+      --text-muted: rgba(0,0,0,.45);
+      --bg-body: #f6f8fc;
+      --bg-card: #ffffff;
+      --border: #e5e7eb;
+      --radius-lg: 16px;
+      --radius-md: 12px;
+      --shadow: 0 10px 30px rgba(37,99,235,.12);
+    }
+    html, body { height:100%; }
+    body { margin:0; background: var(--bg-body); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', 'PingFang SC', 'Microsoft YaHei', sans-serif; }
+
+    /* 布局骨架 */
+    .app { min-height: 100vh; display:grid; grid-template-columns: 240px 1fr; }
+    .sider { background: var(--bg-card); border-right: 1px solid var(--border); padding: 18px 16px; }
+    .sider-header { display:flex; align-items:center; gap:10px; padding: 8px 10px; border-radius: var(--radius-md); }
+    .logo { width:32px; height:32px; border-radius:50%; background: linear-gradient(135deg, var(--blue-6), var(--blue-4)); display:flex; align-items:center; justify-content:center; color:#fff; font-weight:700; }
+    .title { font-weight:600; color: var(--text-strong); }
+
+    .menu { margin-top: 16px; }
+    .menu-group { margin: 10px 0; }
+    .menu-title { display:none; }
+    .menu-list { list-style:none; margin:0; padding:0; }
+    .menu-item { display:flex; align-items:center; gap:10px; padding: 10px 12px; border-radius: 10px; cursor:pointer; color:#374151; }
+    .menu-item:hover { background:#f0f5ff; }
+    .menu-item.active { background:#e6f0ff; color: var(--blue-6); }
+    .menu-item .icon { width:20px; height:20px; display:inline-flex; align-items:center; justify-content:center; color: var(--blue-6); }
+    .submenu { margin-left: 10px; border-left: 2px dashed #eef2ff; padding-left: 8px; }
+
+    /* 将主内容区域高度设置为 100vh，内容区为 100vh - 头部 64px */
+    .main { height: 100vh; display:grid; grid-template-rows: 64px 1fr; }
+    .header { background: var(--bg-card); border-bottom: 1px solid var(--border); display:flex; align-items:center; justify-content:space-between; padding: 0 16px; }
+    .header-left { display:flex; align-items:center; gap:12px; color: var(--text-strong); }
+    .header-right { display:flex; align-items:center; gap:16px; }
+    /* 面包屑：展示菜单层级 */
+    .breadcrumb { display:flex; align-items:center; gap:8px; font-size:14px; }
+    .breadcrumb .crumb { color: rgba(0,0,0,.65); }
+    .breadcrumb .crumb.current { color: var(--text-strong); font-weight:600; }
+    .breadcrumb .sep { color: #d9d9d9; }
+    .breadcrumb a { color: rgba(0,0,0,.85); text-decoration:none; }
+    .breadcrumb a:hover { color: var(--blue-6); }
+    .bell { width:28px; height:28px; border-radius: 50%; background:#f0f5ff; display:flex; align-items:center; justify-content:center; color: var(--blue-6); cursor:pointer; }
+    .avatar-wrap { position:relative; }
+    .avatar { width:32px; height:32px; border-radius:50%; background:#c1d4ff; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:600; cursor:pointer; }
+    .user-menu { position:absolute; right:0; top:38px; background:#fff; border:1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow); list-style:none; padding:6px 0; margin:0; display:none; min-width:140px; z-index:20; }
+    .avatar-wrap:hover .user-menu { display:block; }
+    .user-menu li { padding:8px 12px; font-size:14px; color:#374151; cursor:pointer; }
+    .user-menu li:hover { background:#f5f7fa; }
+
+    /* 主内容区域填满高度，卡片内采用纵向布局 */
+    .content { padding: 0; height: 100%; box-sizing:border-box; }
+    .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow); height: 100%; display:flex; flex-direction: column; }
+
+    /* 部门管理：工具栏、树形结构、分页 */
+    .toolbar { display:flex; align-items:center; justify-content:space-between; padding: 16px; border-bottom:1px solid var(--border); }
+    .toolbar .left { display:flex; align-items:center; gap:12px; }
+    .toolbar .left > div { display:flex; align-items:center; gap:8px; }
+    .toolbar .right { display:flex; align-items:center; gap:10px; }
+    
+    /* 输入与选择：模仿 Ant Design 中等尺寸 */
+    .input, .select {
+      height: 32px;
+      line-height: 32px;
+      border-radius: 6px;
+      padding: 4px 11px;
+      border: 1px solid #d9d9d9;
+      background: #fff;
+      color: #333;
+      font-size: 14px;
+      box-sizing: border-box;
+      outline: none;
+      transition: border-color .2s ease, box-shadow .2s ease;
+    }
+    .input:focus, .select:focus {
+      border-color: var(--blue-6);
+      box-shadow: 0 0 0 2px rgba(47, 84, 235, 0.2);
+    }
+    
+    /* 按钮：模仿 Ant Design 中等尺寸 */
+    .btn {
+      height: 32px;
+      padding: 0 15px;
+      border-radius: 6px;
+      border: 1px solid #d9d9d9;
+      background: #fff;
+      color: #444;
+      cursor: pointer;
+      transition: background-color .2s ease, border-color .2s ease, color .2s ease;
+    }
+    .btn:hover { background: #f5f5f5; }
+    .btn:active { background: #f0f0f0; }
+    .btn-primary {
+      background: var(--blue-6);
+      border-color: var(--blue-6);
+      color: #fff;
+    }
+    .btn-primary:hover { background: var(--blue-5); border-color: var(--blue-5); }
+    .btn-danger { background: #ff4d4f; border-color: #ff4d4f; color: #fff; }
+    .btn-danger:hover { background: #f5222d; border-color: #f5222d; }
+    .op-btns .btn { height: 32px; padding: 0 12px; font-size: 12px; }
+
+    /* 列表重置：去除 ul/li 默认样式 */
+    .sys-menu, .sys-menu ul { list-style: none; margin: 0; padding: 0; }
+    .sys-menu li { list-style: none; margin: 0; padding: 0; }
+    .sys-menu-root { padding: 8px 0; }
+    .sys-menu-item, .sys-menu-submenu-title { display:flex; align-items:center; justify-content:space-between; height:40px; line-height:40px; padding:0 16px; margin:0; border-radius:6px; cursor:pointer; color: rgba(0,0,0,.85); transition: all .2s ease; }
+    .sys-menu-item .left, .sys-menu-submenu-title .left { display:flex; align-items:center; gap:10px; }
+    .sys-menu-item.is-active { background:#e6f7ff; color: var(--blue-6); }
+    .sys-menu-item.is-active .icon { color: var(--blue-6); }
+    .sys-menu-submenu > .sys-menu { padding-left:24px; }
+    .sys-menu .icon { font-size: 14px; width: 16px; display:inline-flex; align-items:center; justify-content:center; }
+    .sys-menu-submenu-title .caret { color:#8c8c8c; font-size:12px; transition: transform .2s ease; }
+    .sys-menu-submenu.sys-open .sys-menu-submenu-title .caret { transform: rotate(180deg); }
+
+    /* 树形表格样式 */
+    .table-wrap { flex: 1; overflow: auto; }
+    .table-wrap table { width: 100%; border-collapse: separate; border-spacing: 0; }
+    .table-wrap thead th {
+      background: #fafafa;
+      font-weight: 500;
+      font-size: 14px;
+      color: rgba(0,0,0,.88);
+      padding: 12px 16px;
+      border-bottom: 1px solid #f0f0f0;
+      text-align: left;
+    }
+    .table-wrap tbody td {
+      padding: 12px 16px;
+      border-bottom: 1px solid #f0f0f0;
+      color: rgba(0,0,0,.88);
+    }
+    .table-wrap tbody tr:hover td { background: #fafafa; }
+    .table-wrap th:first-child, .table-wrap td:first-child { text-align: center; width: 40px; }
+    .op-btns { display:flex; align-items:center; justify-content:center; gap:8px; }
+    .tree-cell { display:flex; align-items:center; }
+    .tree-toggle { width:16px; height:16px; display:inline-flex; align-items:center; justify-content:center; margin-right:8px; cursor:pointer; color:#8c8c8c; }
+    .tree-toggle.leaf { visibility:hidden; }
+    .tree-indent { display:inline-block; width:16px; height:16px; }
+    .tree-name { flex:1; }
+    .hidden { display:none; }
+
+    /* 弹窗样式 */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.45);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+    .modal-overlay.show { display: flex; }
+    .modal {
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      width: 520px;
+      max-width: 90vw;
+      max-height: 90vh;
+      overflow: hidden;
+    }
+    .modal-header {
+      padding: 16px 24px;
+      border-bottom: 1px solid #f0f0f0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .modal-title { font-size: 16px; font-weight: 500; }
+    .modal-close { width:28px; height:28px; border-radius:50%; border:0; background:transparent; color:#666; display:flex; align-items:center; justify-content:center; cursor:pointer; }
+    .modal-close:hover { background:#f5f5f5; }
+    .modal-close:active { background:#eee; }
+    .modal-body { padding: 24px; }
+    .modal-footer {
+      padding: 10px 16px;
+      border-top: 1px solid #f0f0f0;
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    /* 表单样式 */
+    .form-group { margin-bottom: 16px; }
+    .form-label { display: block; margin-bottom: 4px; font-size: 14px; color: #333; }
+    .form-input { width: 100%; }
+    .form-textarea { width: 100%; min-height: 80px; resize: vertical; }
+  </style>
+</head>
+<body>
+  <app-layout active="departments" breadcrumb="系统管理 / 部门管理">
+    <div slot="content" class="content">
+      <div class="card">
+        <!-- 工具栏 -->
+        <div class="toolbar">
+          <div class="left">
+            <div>
+              <label>部门名称：</label>
+              <input type="text" class="input" placeholder="请输入部门名称" id="searchName" style="width: 200px;">
+            </div>
+            <button class="btn" onclick="searchDepartments()">
+              <i class="fa-solid fa-search"></i> 搜索
+            </button>
+            <button class="btn" onclick="resetSearch()">
+              <i class="fa-solid fa-refresh"></i> 重置
+            </button>
+          </div>
+          <div class="right">
+            <button class="btn btn-primary" onclick="showAddModal()">
+              <i class="fa-solid fa-plus"></i> 新增部门
+            </button>
+            <button class="btn btn-danger" onclick="deleteSelectedDepartments()">
+              <i class="fa-solid fa-trash"></i> 删除
+            </button>
+            <button class="btn" onclick="expandAll()">
+              <i class="fa-solid fa-expand-arrows-alt"></i> 展开全部
+            </button>
+            <button class="btn" onclick="collapseAll()">
+              <i class="fa-solid fa-compress-arrows-alt"></i> 折叠全部
+            </button>
+          </div>
+        </div>
+
+        <!-- 树形表格区域 -->
+        <div class="table-wrap">
+          <table class="tree-table">
+            <thead>
+              <tr>
+                <th style="width:40px; text-align:center;"><input type="checkbox" id="selectAllDepartments"></th>
+                <th style="width:25%;">部门名称</th>
+                <th style="width:15%">部门编码</th>
+                <th style="width:30%">描述</th>
+                <th style="width:15%">创建时间</th>
+                <th style="width:160px; text-align:center;">操作</th>
+              </tr>
+            </thead>
+            <tbody id="deptTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- 将弹窗也放入 app-layout 内，便于整体管理 -->
+  </app-layout>
+
+  <!-- 确认删除弹窗（自定义UI） -->
+  <div id="confirmOverlay" class="modal-overlay" aria-modal="true" role="dialog">
+    <div class="modal" role="document">
+      <div class="modal-header">
+        <div class="modal-title">确认删除</div>
+      </div>
+      <div class="modal-body">
+        <div id="confirmMessage">确定要执行删除操作吗？删除后不可恢复！</div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" id="confirmCancelBtn">取消</button>
+        <button class="btn btn-primary" id="confirmOkBtn">确定</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 新增/编辑部门弹窗（保持在 body 内，亦可放入 app-layout 内部） -->
+  <div class="modal-overlay" id="departmentModal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title" id="modalTitle">新增部门</div>
+        <button class="modal-close" onclick="closeModal()" title="关闭"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body">
+        <form id="departmentForm">
+          <div class="form-group">
+            <label class="form-label">上级部门</label>
+            <select class="form-input" id="parentId">
+              <option value="">请选择上级部门</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">部门名称 <span style="color: red;">*</span></label>
+            <input type="text" class="form-input" id="deptName" placeholder="请输入部门名称" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">部门编码</label>
+            <input type="text" class="form-input" id="deptCode" placeholder="请输入部门编码">
+          </div>
+          <div class="form-group">
+            <label class="form-label">备注</label>
+            <textarea class="form-input form-textarea" id="remark" placeholder="请输入备注"></textarea>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal()">取消</button>
+        <button class="btn btn-primary" onclick="saveDepartment()">确定</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 模拟部门数据
+    let departmentData = [
+      {
+        id: 1,
+        name: '高速公路管理局',
+        phone: '010-88888888',
+        remark: '高速公路管理总局',
+        createTime: '2023-01-15 09:00:00',
+        children: [
+          {
+            id: 2,
+            name: '监控指挥中心',
+            phone: '010-88888801',
+            remark: '负责全路网监控调度',
+            createTime: '2023-02-10 10:30:00',
+            children: [
+              {
+                id: 5,
+                name: '视频监控组',
+                phone: '010-88888805',
+                remark: '视频监控设备维护',
+                createTime: '2023-03-05 14:20:00'
+              },
+              {
+                id: 6,
+                name: '数据分析组',
+                phone: '010-88888806',
+                remark: '交通数据分析处理',
+                createTime: '2023-03-05 14:25:00'
+              }
+            ]
+          },
+          {
+            id: 3,
+            name: '应急救援中心',
+            phone: '010-88888802',
+            remark: '负责应急事件处置',
+            createTime: '2023-02-15 11:00:00'
+          },
+          {
+            id: 4,
+            name: '路政管理处',
+            phone: '010-88888803',
+            remark: '负责路政执法管理',
+            createTime: '2023-02-20 09:15:00'
+          },
+          {
+            id: 7,
+            name: '养护工程处',
+            phone: '010-88888807',
+            remark: '负责道路养护工程',
+            createTime: '2023-03-01 08:45:00'
+          },
+          {
+            id: 8,
+            name: '收费管理处',
+            phone: '010-88888808',
+            remark: '负责收费站运营管理',
+            createTime: '2023-03-10 16:30:00'
+          }
+        ]
+      }
+    ];
+
+    let currentEditId = null;
+    let expandedNodes = new Set([1]); // 默认展开根节点
+    const selectedDepartmentIds = new Set(); // 选中部门ID集合（跨折叠保留）
+
+    // 页面加载完成后初始化
+    document.addEventListener('DOMContentLoaded', function() {
+      generateDepartmentCodes();
+      renderTreeTable();
+      loadParentOptions();
+      const selectAll = document.getElementById('selectAllDepartments');
+      if (selectAll) {
+        selectAll.addEventListener('change', function(e) {
+          const tbody = document.getElementById('deptTableBody');
+          const boxes = Array.from(tbody.querySelectorAll('tr:not(.hidden) input.row-select'));
+          boxes.forEach(b => {
+            b.checked = e.target.checked;
+            const id = parseInt(b.dataset.id);
+            if (e.target.checked) selectedDepartmentIds.add(id);
+            else selectedDepartmentIds.delete(id);
+          });
+          updateSelectAllDepartmentsState();
+        });
+      }
+    });
+
+    // 渲染树形表格
+    function renderTreeTable() {
+      const tbody = document.getElementById('deptTableBody');
+      tbody.innerHTML = '';
+
+      function renderNodeRow(node, level = 0, visible = true) {
+        const hasChildren = node.children && node.children.length > 0;
+        const isExpanded = expandedNodes.has(node.id);
+        const tr = document.createElement('tr');
+        if (!visible) tr.classList.add('hidden');
+        tr.setAttribute('data-id', node.id);
+        tr.setAttribute('data-level', level);
+
+        tr.innerHTML = `
+          <td><input type="checkbox" class="row-select" data-id="${node.id}" ${selectedDepartmentIds.has(node.id) ? 'checked' : ''}></td>
+          <td>
+            <div class="tree-cell">
+              ${Array(level).fill('<span class="tree-indent"></span>').join('')}
+              <span class="tree-toggle ${hasChildren ? '' : 'leaf'}" onclick="toggleNode(${node.id})">
+                ${hasChildren ? (isExpanded ? '<i class="fa-solid fa-chevron-down"></i>' : '<i class="fa-solid fa-chevron-right"></i>') : ''}
+              </span>
+              <i class="fa-solid fa-sitemap" style="color:var(--blue-6); margin-right:8px;"></i>
+              <span class="tree-name">${node.name}</span>
+            </div>
+          </td>
+          <td>${node.code || ''}</td>
+          <td>${node.remark || ''}</td>
+          <td>${node.createTime || ''}</td>
+          <td>
+            <div class="op-btns">
+              <button class="btn" onclick="showAddModal(${node.id})" title="新增子部门"><i class="fa-solid fa-plus"></i></button>
+              <button class="btn" onclick="showEditModal(${node.id})" title="编辑"><i class="fa-solid fa-edit"></i></button>
+              <button class="btn btn-danger" onclick="deleteDepartment(${node.id})" title="删除"><i class="fa-solid fa-trash"></i></button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+
+        if (hasChildren) {
+          node.children.forEach(child => renderNodeRow(child, level + 1, isExpanded));
+        }
+      }
+
+      departmentData.forEach(node => renderNodeRow(node, 0, true));
+
+      // 绑定每行选择框事件
+      const checkboxes = tbody.querySelectorAll('input.row-select');
+      checkboxes.forEach(cb => {
+        cb.addEventListener('change', (e) => {
+          const id = parseInt(e.target.dataset.id);
+          const node = findDepartmentById(id);
+          if (!node) return;
+          const ids = getAllIds([node]);
+          if (e.target.checked) {
+            ids.forEach(i => selectedDepartmentIds.add(i));
+          } else {
+            ids.forEach(i => selectedDepartmentIds.delete(i));
+          }
+          // 同步子节点的复选框勾选状态（包括折叠状态下的隐藏行）
+          ids.forEach(i => {
+            const el = tbody.querySelector(`input.row-select[data-id="${i}"]`);
+            if (el) el.checked = e.target.checked;
+          });
+          updateSelectAllDepartmentsState();
+        });
+      });
+      updateSelectAllDepartmentsState();
+    }
+
+    function updateSelectAllDepartmentsState() {
+      const selectAll = document.getElementById('selectAllDepartments');
+      if (!selectAll) return;
+      const tbody = document.getElementById('deptTableBody');
+      const boxes = Array.from(tbody.querySelectorAll('tr:not(.hidden) input.row-select'));
+      const total = boxes.length;
+      const checked = boxes.filter(b => b.checked).length;
+      selectAll.indeterminate = checked > 0 && checked < total;
+      selectAll.checked = total > 0 && checked === total;
+    }
+
+    // 切换节点展开/折叠
+    function toggleNode(nodeId) {
+      if (expandedNodes.has(nodeId)) {
+        expandedNodes.delete(nodeId);
+      } else {
+        expandedNodes.add(nodeId);
+      }
+      renderTreeTable();
+    }
+
+    // 展开全部
+    function expandAll() {
+      function collectIds(nodes) {
+        let ids = [];
+        nodes.forEach(node => {
+          ids.push(node.id);
+          if (node.children) {
+            ids = ids.concat(collectIds(node.children));
+          }
+        });
+        return ids;
+      }
+      
+      expandedNodes = new Set(collectIds(departmentData));
+      renderTreeTable();
+    }
+
+    // 折叠全部
+    function collapseAll() {
+      expandedNodes = new Set([1]); // 只保留根节点展开
+      renderTreeTable();
+    }
+
+    // 搜索部门
+    function searchDepartments() {
+      const searchName = document.getElementById('searchName').value.trim();
+      // 这里可以实现搜索逻辑
+      console.log('搜索部门:', searchName);
+    }
+
+    // 重置搜索
+    function resetSearch() {
+      document.getElementById('searchName').value = '';
+      renderTreeTable();
+    }
+
+    // 显示新增弹窗
+    function showAddModal(parentId = null) {
+      currentEditId = null;
+      document.getElementById('modalTitle').textContent = '新增部门';
+      document.getElementById('departmentForm').reset();
+      document.getElementById('parentId').value = parentId || '';
+      document.getElementById('departmentModal').classList.add('show');
+    }
+
+    // 显示编辑弹窗
+    function showEditModal(id) {
+      const dept = findDepartmentById(id);
+      if (!dept) return;
+      
+      currentEditId = id;
+      document.getElementById('modalTitle').textContent = '编辑部门';
+      document.getElementById('deptName').value = dept.name;
+      document.getElementById('deptCode').value = dept.code || '';
+      document.getElementById('remark').value = dept.remark || '';
+      
+      // 设置上级部门
+      const parent = findParentDepartment(id);
+      document.getElementById('parentId').value = parent ? parent.id : '';
+      
+      document.getElementById('departmentModal').classList.add('show');
+    }
+
+    // 关闭弹窗
+    function closeModal() {
+      document.getElementById('departmentModal').classList.remove('show');
+    }
+
+    // 保存部门
+    function saveDepartment() {
+      const form = document.getElementById('departmentForm');
+      const formData = new FormData(form);
+      
+      const deptName = document.getElementById('deptName').value.trim();
+      if (!deptName) {
+        alert('请输入部门名称');
+        return;
+      }
+      
+      const deptData = {
+        name: deptName,
+        code: document.getElementById('deptCode').value.trim(),
+        remark: document.getElementById('remark').value.trim()
+      };
+      
+      if (currentEditId) {
+        // 编辑
+        updateDepartment(currentEditId, deptData);
+      } else {
+        // 新增
+        const parentId = document.getElementById('parentId').value;
+        addDepartment(deptData, parentId ? parseInt(parentId) : null);
+      }
+      
+      closeModal();
+      renderTreeTable();
+      loadParentOptions();
+    }
+
+    // 删除部门（使用自定义确认弹窗）
+    function deleteDepartment(id) {
+      showConfirm('确定要删除该部门吗？删除后不可恢复！', () => {
+        const node = findDepartmentById(id);
+        if (node) {
+          const idsToRemove = getAllIds([node]);
+          idsToRemove.forEach(i => selectedDepartmentIds.delete(i));
+        }
+        removeDepartment(id);
+        renderTreeTable();
+        loadParentOptions();
+      });
+    }
+
+    // 批量删除选中部门（使用自定义确认弹窗）
+    function deleteSelectedDepartments() {
+      if (selectedDepartmentIds.size === 0) {
+        Message.warning('请选择需要删除的数据！', 2);
+        return;
+      }
+      showConfirm('确定要删除选中的部门及其子部门吗？删除后不可恢复！', () => {
+        const ids = Array.from(selectedDepartmentIds);
+        ids.forEach(id => removeDepartment(id));
+        selectedDepartmentIds.clear();
+        renderTreeTable();
+        loadParentOptions();
+      });
+    }
+
+    // 自定义确认弹窗逻辑
+    function showConfirm(message, onConfirm) {
+      const overlay = document.getElementById('confirmOverlay');
+      const msgEl = document.getElementById('confirmMessage');
+      const okBtn = document.getElementById('confirmOkBtn');
+      const cancelBtn = document.getElementById('confirmCancelBtn');
+      msgEl.textContent = message;
+      overlay.classList.add('show');
+      const cleanup = () => { overlay.classList.remove('show'); okBtn.onclick = null; cancelBtn.onclick = null; };
+      cancelBtn.onclick = cleanup;
+      okBtn.onclick = () => { cleanup(); try { onConfirm && onConfirm(); } catch (e) { console.error(e); } };
+    }
+
+    // 查找部门
+    function findDepartmentById(id, nodes = departmentData) {
+      for (let node of nodes) {
+        if (node.id === id) return node;
+        if (node.children) {
+          const found = findDepartmentById(id, node.children);
+          if (found) return found;
+        }
+      }
+      return null;
+    }
+
+    // 查找父部门
+    function findParentDepartment(id, nodes = departmentData, parent = null) {
+      for (let node of nodes) {
+        if (node.id === id) return parent;
+        if (node.children) {
+          const found = findParentDepartment(id, node.children, node);
+          if (found) return found;
+        }
+      }
+      return null;
+    }
+
+    // 添加部门
+    function addDepartment(deptData, parentId) {
+      const newId = Math.max(...getAllIds()) + 1;
+      const newDept = { id: newId, ...deptData, children: [] };
+      // 自动生成缺失的部门编码
+      if (!newDept.code || newDept.code.trim() === '') {
+        const parent = parentId ? findDepartmentById(parentId) : null;
+        const parentCode = parent && parent.code ? parent.code : null;
+        newDept.code = buildDeptCode(newDept.id, parentCode);
+      }
+      
+      if (parentId) {
+        const parent = findDepartmentById(parentId);
+        if (parent) {
+          if (!parent.children) parent.children = [];
+          parent.children.push(newDept);
+          expandedNodes.add(parentId); // 展开父节点
+        }
+      } else {
+        departmentData.push(newDept);
+      }
+    }
+
+    // 更新部门
+    function updateDepartment(id, deptData) {
+      const dept = findDepartmentById(id);
+      if (dept) {
+        Object.assign(dept, deptData);
+      }
+    }
+
+    // 删除部门
+    function removeDepartment(id, nodes = departmentData) {
+      for (let i = 0; i < nodes.length; i++) {
+        if (nodes[i].id === id) {
+          nodes.splice(i, 1);
+          return true;
+        }
+        if (nodes[i].children && removeDepartment(id, nodes[i].children)) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    // 获取所有ID
+    function getAllIds(nodes = departmentData) {
+      let ids = [];
+      nodes.forEach(node => {
+        ids.push(node.id);
+        if (node.children) {
+          ids = ids.concat(getAllIds(node.children));
+        }
+      });
+      return ids;
+    }
+
+    // 生成部门编码（对现有数据补齐）
+    function generateDepartmentCodes() {
+      function traverse(nodes, parentCode = null) {
+        nodes.forEach(node => {
+          if (!node.code || node.code.trim() === '') {
+            node.code = buildDeptCode(node.id, parentCode);
+          }
+          const nextParentCode = node.code;
+          if (node.children && node.children.length > 0) {
+            traverse(node.children, nextParentCode);
+          }
+        });
+      }
+      traverse(departmentData, null);
+    }
+
+    // 构建部门编码：根为 DEPT-xxx，子级为父编码-xxx
+    function buildDeptCode(id, parentCode) {
+      const padded = String(id).padStart(3, '0');
+      return parentCode ? `${parentCode}-${padded}` : `DEPT-${padded}`;
+    }
+
+    // 加载上级部门选项
+    function loadParentOptions() {
+      const select = document.getElementById('parentId');
+      select.innerHTML = '<option value="">请选择上级部门</option>';
+      
+      function addOptions(nodes, prefix = '') {
+        nodes.forEach(node => {
+          const option = document.createElement('option');
+          option.value = node.id;
+          option.textContent = prefix + node.name;
+          select.appendChild(option);
+          
+          if (node.children && node.children.length > 0) {
+            addOptions(node.children, prefix + '　');
+          }
+        });
+      }
+      
+      addOptions(departmentData);
+    }
+
+    // 修改密码弹窗
+    function showChangePasswordModal() {
+      alert('修改密码功能待实现');
+    }
+
+    // 退出登录
+    function logout() {
+      if (confirm('确定要退出登录吗？')) {
+        window.location.href = 'login.html';
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>应急指挥 · 报告复盘</title>
+  <link rel="icon" href="../assets/logo-hrecs-radar.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="../css/styles.css">
+  <script src="../components/app-layout.js"></script>
+  <style>
+    :root { --border:#e5e7eb; --muted:#6b7280; --title:#1f2937; }
+    body { margin:0; background:#f6f8fc; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,'Noto Sans','PingFang SC','Microsoft YaHei',sans-serif; }
+    .layout { display:grid; grid-template-columns: 220px 1fr; gap:16px; }
+    .toc { background:#fff; border:1px solid var(--border); border-radius:10px; padding:12px; position:sticky; top:12px; align-self:start; }
+    .toc h3 { margin:0 0 8px 0; font-size:14px; color:var(--title); }
+    .toc a { display:block; padding:6px 8px; border-radius:8px; color:#374151; text-decoration:none; }
+    .toc a:hover { background:#f5f5f5; }
+    .card { background:#fff; border:1px solid var(--border); border-radius:10px; padding:12px; margin-bottom:12px; }
+    .card h2 { margin:0 0 8px 0; font-size:16px; color:var(--title); }
+    .muted { color:var(--muted); font-size:12px; }
+    .kpi { display:flex; gap:12px; margin-top:8px; }
+    .kpi .box { background:#fafafa; border:1px solid #f0f0f0; border-radius:8px; padding:8px 10px; }
+    .meta { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+    .timeline { border-left:2px solid #e5e7eb; padding-left:12px; display:flex; flex-direction:column; gap:8px; }
+    .tl-item { position:relative; }
+    .tl-item::before { content:''; position:absolute; left:-7px; top:4px; width:8px; height:8px; background:#91caff; border-radius:50%; }
+    .res-list { display:flex; flex-direction:column; gap:6px; }
+    .res-chip { display:flex; align-items:center; gap:8px; border:1px solid #f0f0f0; border-radius:20px; padding:6px 10px; }
+    .res-detail { display:flex; flex-direction:column; gap:6px; border:1px solid #f0f0f0; border-radius:10px; padding:8px 10px; background:#fafafa; }
+    .res-detail .line { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+    .res-detail .kv { display:flex; gap:16px; flex-wrap:wrap; }
+    .res-detail .kv .item { font-size:13px; color:#374151; }
+    .res-detail .kv .item .key { color:var(--muted); margin-right:4px; }
+    .suggest { display:flex; flex-direction:column; gap:8px; }
+    .suggest .item { background:#fff7e6; border:1px solid #ffd591; border-radius:8px; padding:8px; }
+    .actions { display:flex; gap:8px; justify-content:flex-end; }
+    /* 等级徽标样式：与告警页面保持一致 */
+    .level-badge { display:inline-block; padding:2px 8px; border-radius:12px; font-size:12px; font-weight:500; }
+    .level-badge.低级 { background:#f6ffed; color:#52c41a; border:1px solid #b7eb8f; }
+    .level-badge.中级 { background:#fff7e6; color:#fa8c16; border:1px solid #ffd591; }
+    .level-badge.高级 { background:#fff2e8; color:#fa541c; border:1px solid #ffbb96; }
+    .level-badge.紧急 { background:#fff1f0; color:#f5222d; border:1px solid #ffa39e; }
+    .content-body {height: 100%;}
+    .layout { height: 100%;}
+    .layout > main {height: 100%; overflow: auto;}
+  </style>
+  <script>
+    // 滚动到锚点：优先滚动 main 容器，兼容窗口滚动
+    function scrollToAnchor(id){
+      const el = document.getElementById(id);
+      if(!el) return;
+      const scroller = document.querySelector('.layout > main');
+      if (scroller && getComputedStyle(scroller).overflowY !== 'visible') {
+        const top = el.getBoundingClientRect().top - scroller.getBoundingClientRect().top + scroller.scrollTop - 12;
+        scroller.scrollTo({ top, behavior: 'smooth' });
+      } else {
+        const top = el.getBoundingClientRect().top + window.scrollY - 12;
+        window.scrollTo({ top, behavior: 'smooth' });
+      }
+    }
+  </script>
+  
+</head>
+<body>
+  <app-layout active="emergency-reports" breadcrumb="首页 / 应急指挥 / 报告复盘">
+    <div slot="content" class="content-body" style="gap:16px;">
+      <div class="layout">
+        <!-- 左侧：目录（Anchor TOC） -->
+        <aside class="toc">
+          <h3>目录</h3>
+          <a href="#summary" onclick="scrollToAnchor('summary');return false;">摘要</a>
+          <a href="#process" onclick="scrollToAnchor('process');return false;">过程复盘</a>
+          <a href="#resources" onclick="scrollToAnchor('resources');return false;">资源与调度</a>
+          <a href="#improve" onclick="scrollToAnchor('improve');return false;">问题与改进</a>
+          <a href="#conclusion" onclick="scrollToAnchor('conclusion');return false;">结论与下一步</a>
+        </aside>
+
+        <!-- 右侧：章节化报告 -->
+        <main>
+          <div class="card">
+            <h2>摘要</h2>
+            <div class="meta" id="summary" style="margin-bottom:8px;"></div>
+            <div style="display:flex; align-items:center; gap:8px; margin:8px 0;">
+              <label for="incidentSelect" class="muted">选择事件：</label>
+              <select id="incidentSelect" class="input" style="min-width:280px;"></select>
+              <div class="actions" style="margin-left:auto;">
+                <button class="btn" onclick="exportPDF()"><i class="fa-solid fa-file-pdf"></i> 导出PDF</button>
+                <button class="btn" onclick="shareLink()"><i class="fa-solid fa-link"></i> 分享链接</button>
+              </div>
+            </div>
+            <div class="kpi">
+              <div class="box" id="kpi_resp">响应：--</div>
+              <div class="box" id="kpi_arr">到场：--</div>
+              <div class="box" id="kpi_recov">恢复：--</div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h2 id="process">过程复盘</h2>
+            <div id="timelineBox" class="timeline"></div>
+          </div>
+
+          <div class="card">
+            <h2 id="resources">资源与调度</h2>
+            <div id="boundResources" class="res-list"></div>
+          </div>
+
+          <div class="card">
+            <h2 id="improve">问题与改进</h2>
+            <div id="improveBox" class="suggest"></div>
+          </div>
+
+          <div class="card">
+            <h2 id="conclusion">结论与下一步</h2>
+            <div id="conclusionBox" class="muted"></div>
+          </div>
+        </main>
+      </div>
+    </div>
+  </app-layout>
+
+  <script>
+    const storeKey='incidentStore';
+    function now(){ return new Date().toISOString().replace('T',' ').slice(0,16); }
+    function loadStore(){ try{ return JSON.parse(localStorage.getItem(storeKey)||'{}'); }catch(e){ return {}; } }
+    function saveStore(data){ localStorage.setItem(storeKey, JSON.stringify(data)); }
+    function seed(){ const s=loadStore(); if(s.incidents&&s.incidents.length) return; const incidents=[
+      { id:'INC-20251102-001', type:'隧道火灾', level:'II级', location:'隧道A-出口', createdAt:'2025-11-02 08:33', status:'open', timeline:[{at:'2025-11-02 08:33', type:'created', text:'事件创建'}], resources:[] },
+      { id:'INC-20251102-002', type:'路面塌陷', level:'III级', location:'路段C-中段', createdAt:'2025-11-02 09:55', status:'open', timeline:[{at:'2025-11-02 09:55', type:'created', text:'事件创建'}], resources:[] }
+    ]; saveStore({ incidents }); }
+    seed();
+    // 规范化时间线类型：resource_bound -> resource_bind；移除 resource_unbound
+    (function normalizeStore(){ const s=loadStore(); if(!s || !s.incidents) return; s.incidents = s.incidents.map(i=>{
+      const tl = (i.timeline||[])
+        .map(t=> ({ ...t, type: t.type==='resource_bound' ? 'resource_bind' : t.type }))
+        .filter(t=> t.type !== 'resource_unbound');
+      return { ...i, timeline: tl };
+    }); saveStore(s); })();
+
+    const state={ activeId:null };
+    // 等级映射与中文展示
+    const levelMap = { L1:'低级', L2:'中级', L3:'高级', L4:'紧急', L5:'紧急', 'I级':'低级', 'II级':'中级', 'III级':'高级', 'IV级':'紧急', 'V级':'紧急', '低级':'低级', '中级':'中级', '高级':'高级', '紧急':'紧急' };
+    function normalizeLevel(level){ return levelMap[level] || level || '-'; }
+    function typeText(type){ const map={
+      created:'事件创建', ack:'确认', arrival:'到场签到', closed:'关闭',
+      action_note:'行动备注', attachment:'上传资料', binding:'资源绑定', bind:'资源绑定', resource_bind:'资源绑定', resource_update:'资源更新', dispatch:'调度'
+    }; return map[type] || type; }
+    function typeLabel(t){ if(t==='person') return '人员'; if(t==='material') return '物资'; return t||'-'; }
+    function parseTime(s){ try{ return s? new Date(s): null; }catch(e){ return null; } }
+    function maxTime(a,b){ if(!a) return b||null; if(!b) return a||null; return a>b? a:b; }
+    function fmt(ms){ const m=Math.round(ms/60000); if(m<1)return `${Math.round(ms/1000)}s`; if(m<60)return `${m}min`; const h=Math.floor(m/60),rm=m%60; return `${h}h${rm?` ${rm}min`:''}`; }
+    function computeStatus(i){ if(!i) return '未开始';
+      const closed = (i.timeline||[]).filter(t=>t.type==='closed').map(t=>parseTime(t.at)).reduce(maxTime,null);
+      if(closed) return '已关闭';
+      const ack = (i.timeline||[]).filter(t=>t.type==='ack').map(t=>parseTime(t.at)).reduce(maxTime,null);
+      const arrival = (i.timeline||[]).filter(t=>t.type==='arrival').map(t=>parseTime(t.at)).reduce(maxTime,null);
+      const bindByRes = (i.resources||[]).map(r=>parseTime(r.boundAt)).reduce(maxTime,null);
+      const bindByTl = (i.timeline||[]).filter(t=>['binding','bind','resource_bind','resource_update','dispatch'].includes(t.type)).map(t=>parseTime(t.at)).reduce(maxTime,null);
+      const bind = maxTime(bindByRes, bindByTl);
+      const marks = []; if(ack) marks.push({ t:ack, s:'已确认' }); if(bind) marks.push({ t:bind, s:'调度中' }); if(arrival) marks.push({ t:arrival, s:'处理中' });
+      if(marks.length===0) return '未开始'; marks.sort((a,b)=>a.t-b.t); return marks[marks.length-1].s; }
+    function getIncidents(){ return loadStore().incidents||[]; }
+    function currentIncident(){ return getIncidents().find(i=>i.id===state.activeId)||null; }
+    function findTime(i, types){ const x=(i.timeline||[]).filter(t=>types.includes(t.type)); return x.length? x[0].at: null; }
+    
+    function computeKPIs(i){ const open=findTime(i,['created']); const ack=findTime(i,['ack']); const arr=findTime(i,['arrival']); const closed=findTime(i,['closed']);
+      return {
+        resp: (ack&&open)? fmt(new Date(ack)-new Date(open)):'--',
+        arr: (arr&&ack)? fmt(new Date(arr)-new Date(ack)):'--',
+        recov: (closed&&arr)? fmt(new Date(closed)-new Date(arr)):'--'
+      };
+    }
+
+    function renderSummary(){ const i=currentIncident(); const box=document.getElementById('summary'); if(!i){ box.innerHTML='<span class="muted">请选择事件</span>'; return; }
+      const lvl=normalizeLevel(i.level); const kpi=computeKPIs(i);
+      box.innerHTML = `<strong>${i.type}</strong> · <span class="level-badge ${lvl}">${lvl}</span> · ${i.id} · ${i.location} · 创建：${i.createdAt}`;
+      document.getElementById('kpi_resp').textContent='响应：'+kpi.resp;
+      document.getElementById('kpi_arr').textContent='到场：'+kpi.arr;
+      document.getElementById('kpi_recov').textContent='恢复：'+kpi.recov;
+    }
+
+    function renderTimeline(){ const i=currentIncident(); const tl=document.getElementById('timelineBox'); if(!i){ tl.innerHTML=''; return; }
+      const entries = i.timeline
+        .slice()
+        .filter(t=>!['unbinding','unbind','resource_unbind','unbind_resource','resource_unbound'].includes(t.type))
+        .sort((a,b)=>a.at.localeCompare(b.at));
+      tl.innerHTML=''; entries.forEach(t=>{ const row=document.createElement('div'); row.className='tl-item';
+        row.innerHTML=`<div><strong>${t.at}</strong> · ${typeText(t.type)}</div><div class='muted'>${t.text||''}${t.loc?` · 位置：${t.loc}`:''}${t.route?` · 路线：${t.route.from||''} → ${t.route.to||''}`:''}</div>`; tl.appendChild(row);
+      });
+    }
+
+    function renderResources(){ const i=currentIncident(); const res=document.getElementById('boundResources'); if(!i){ res.innerHTML=''; return; }
+      res.innerHTML='';
+      if(!(i.resources&&i.resources.length)){
+        const empty=document.createElement('div'); empty.className='muted'; empty.textContent='暂无绑定资源。请在“资源绑定”或“事件中心”页面完成绑定后查看详情。'; res.appendChild(empty);
+      }
+      (i.resources||[]).forEach(r=>{
+        const updates = (i.timeline||[]).filter(t=> t.type==='resource_update' && (t.text||'').includes(r.name)).length;
+        const binds = (i.timeline||[]).filter(t=> t.type==='resource_bind' && (t.text||'').includes(r.name)).length;
+        const card=document.createElement('div'); card.className='res-detail';
+        const icon = r.type==='person'?'fa-user':'fa-microchip';
+        const routeText = r.route ? `${r.route.from||''} → ${r.route.to||''}` : '-';
+        card.innerHTML = `
+          <div class="line">
+            <i class="fa-solid ${icon}"></i>
+            <strong>${r.name}</strong>
+            <span class="muted">${typeLabel(r.type)}</span>
+            <span class="muted">ID：${r.resourceId||'-'}</span>
+          </div>
+          <div class="kv">
+            <div class="item"><span class="key">绑定时间</span>${r.boundAt||'-'}</div>
+            <div class="item"><span class="key">备注</span>${r.note||'-'}</div>
+            <div class="item"><span class="key">路线</span>${routeText}</div>
+            <div class="item"><span class="key">绑定事件</span>${binds}</div>
+            <div class="item"><span class="key">更新次数</span>${updates}</div>
+          </div>
+        `;
+        res.appendChild(card);
+      });
+      // 统计调度记录（绑定/更新）
+      const cnt = (i.timeline||[]).filter(t=>['binding','bind','resource_bind','resource_update','dispatch'].includes(t.type)).length + ((i.resources||[]).length||0);
+      const hint=document.createElement('div'); hint.className='muted'; hint.textContent=`调度记录数：${cnt}`; res.appendChild(hint);
+    }
+
+    function renderImprove(){ const i=currentIncident(); const box=document.getElementById('improveBox'); if(!i){ box.innerHTML=''; return; }
+      const kpi=computeKPIs(i); const items=[];
+      if(kpi.resp!=='--'){ const m=parseInt(kpi.resp); if(!isNaN(m) && (kpi.resp.includes('h') || m>15)) items.push('响应用时偏长，建议优化确认流程与告警通知链。'); }
+      if(kpi.arr!=='--'){ const m=parseInt(kpi.arr); if(!isNaN(m) && (kpi.arr.includes('h') || m>30)) items.push('到场耗时较长，建议复核路线规划与资源就近策略。'); }
+      if(kpi.recov!=='--'){ const m=parseInt(kpi.recov); if(!isNaN(m) && (kpi.recov.includes('h') || m>60)) items.push('恢复阶段较慢，建议梳理处置环节与瓶颈资源。'); }
+      if(items.length===0) items.push('暂无明显瓶颈；保持现有联动与处置节奏。');
+      box.innerHTML=''; items.forEach(t=>{ const d=document.createElement('div'); d.className='item'; d.textContent=t; box.appendChild(d); });
+    }
+
+    function renderConclusion(){ const i=currentIncident(); const box=document.getElementById('conclusionBox'); if(!i){ box.textContent=''; return; }
+      const status=computeStatus(i); box.textContent=`当前闭环状态：${status}。待跟进事项：如需补充资料请在事件中心上传或追加备注。`;
+    }
+
+    function populateSelect(){ const sel=document.getElementById('incidentSelect'); sel.innerHTML=''; const list=getIncidents(); list.forEach(i=>{
+      const opt=document.createElement('option'); opt.value=i.id; opt.textContent=`${i.id} · ${i.type} · ${i.level}`; sel.appendChild(opt);
+    }); if(!state.activeId && list[0]) state.activeId=list[0].id; sel.value=state.activeId||''; sel.onchange=()=>{ state.activeId=sel.value; renderAll(); };
+    }
+
+    function renderAll(){ renderSummary(); renderTimeline(); renderResources(); renderImprove(); renderConclusion(); }
+
+    function exportPDF(){ alert('导出PDF功能为示例占位，可接入打印样式后实现。'); }
+    function shareLink(){ const url=location.origin+location.pathname+'#'+encodeURIComponent(state.activeId||''); navigator.clipboard && navigator.clipboard.writeText(url); alert('分享链接已复制（示例）。'); }
+
+    // 初始化
+    populateSelect(); renderAll();
+  </script>
+</body>
+</html>

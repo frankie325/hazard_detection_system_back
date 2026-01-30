@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>系统管理 · 区域管理</title>
+  <link rel="icon" href="../assets/logo-hrecs-radar.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <script src="../components/app-layout.js"></script>
+  <style>
+    :root { --blue-6:#2F54EB; --blue-5:#3B6AE8; --bg-body:#f6f8fc; --bg-card:#fff; --border:#e5e7eb; --text:#374151; --muted:#6b7280; --radius:12px; --shadow:0 10px 30px rgba(37,99,235,.12); }
+    body { margin:0; background:var(--bg-body); font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,'Noto Sans','PingFang SC','Microsoft YaHei',sans-serif; }
+
+    /* 页面内卡片和表格样式（复用原页面样式） */
+    .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; box-shadow: var(--shadow); height: 100%; display:flex; flex-direction: column; }
+    .toolbar { display:flex; align-items:center; justify-content:space-between; padding: 16px; border-bottom:1px solid var(--border); }
+    .toolbar .left { display:flex; align-items:center; gap:12px; }
+    .toolbar .left > div { display:flex; align-items:center; gap:8px; }
+    .toolbar .right { display:flex; align-items:center; gap:10px; }
+    .input, .select { height: 32px; line-height: 32px; border-radius: 6px; padding: 4px 11px; border: 1px solid #d9d9d9; background: #fff; color: #333; font-size: 14px; box-sizing: border-box; outline: none; transition: border-color .2s ease, box-shadow .2s ease; }
+    .input:focus, .select:focus { border-color: var(--blue-6); box-shadow: 0 0 0 2px rgba(47, 84, 235, 0.2); }
+    .btn { height: 32px; padding: 0 15px; border-radius: 6px; border: 1px solid #d9d9d9; background: #fff; color: #444; cursor: pointer; transition: background-color .2s ease, border-color .2s ease, color .2s ease; }
+    .btn:hover { background: #f5f5f5; }
+    .btn:active { background: #f0f0f0; }
+    .btn-primary { background: var(--blue-6); border-color: var(--blue-6); color: #fff; }
+    .btn-primary:hover { background: var(--blue-5); border-color: var(--blue-5); }
+    .btn-icon { width: 32px; padding: 0; display:inline-flex; align-items:center; justify-content:center; }
+    .btn-danger { background: #ff4d4f; border-color: #ff4d4f; color: #fff; }
+    .btn-danger:hover { background: #f5222d; border-color: #f5222d; }
+
+    .table-wrap { flex: 1; overflow: auto; }
+    table { width: 100%; border-collapse: separate; border-spacing: 0; }
+    thead th { background: #fafafa; font-weight: 500; font-size: 14px; color: rgba(0,0,0,.88); padding: 12px 16px; border-bottom: 1px solid #f0f0f0; text-align: left; }
+    tbody td { padding: 12px 16px; border-bottom: 1px solid #f0f0f0; color: rgba(0,0,0,.88); }
+    tbody tr:hover td { background: #fafafa; }
+    .op-btns { display:flex; align-items:center; gap:8px; }
+    .check-col { width: 48px; }
+
+    .pagination { padding: 12px 16px; display:flex; align-items:center; justify-content:center; gap:8px; }
+    .pagination #pageNumbers { display:flex; align-items:center; gap:8px; }
+
+    /* 弹窗样式 */
+    .modal-overlay { position: fixed; inset:0; background: rgba(0, 0, 0, 0.45); display: none; align-items: center; justify-content: center; z-index: 1000; }
+    .modal-overlay.show { display: flex; }
+    .modal { background: #fff; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); width: 560px; max-width: 90vw; overflow: hidden; }
+    .modal-header { padding: 12px 16px; border-bottom: 1px solid #f0f0f0; display:flex; align-items:center; justify-content:space-between; }
+    .modal-close { width:28px; height:28px; border-radius:50%; border:0; background:transparent; color:#666; display:flex; align-items:center; justify-content:center; cursor:pointer; }
+    .modal-close:hover { background:#f5f5f5; }
+    .modal-close:active { background:#eee; }
+    .modal-body { padding: 16px; }
+    .modal-footer { display:flex; justify-content:flex-end; gap:8px; padding: 8px 16px; border-top:1px solid #f0f0f0; }
+    .form-row { display:flex; gap:12px; margin-bottom:12px; }
+    .form-item { flex:1; display:flex; flex-direction:column; gap:6px; }
+    .form-item label { font-size: 13px; color: #666; }
+  </style>
+</head>
+<body>
+  <app-layout active="areas" breadcrumb="系统管理 / 区域管理">
+    <div slot="content">
+      <div class="card">
+        <!-- 工具栏 -->
+        <div class="toolbar">
+          <div class="left">
+            <div>
+              <div style="font-size:12px;color:var(--muted);">区域名称</div>
+              <input id="searchName" class="input" placeholder="请输入区域名称" />
+            </div>
+            <div>
+              <div style="font-size:12px;color:var(--muted);">负责部门</div>
+              <select id="searchDepartment" class="select">
+                <option value="">全部</option>
+              </select>
+            </div>
+            <button class="btn" onclick="applyFilter()"><i class="fa-solid fa-search"></i> 搜索</button>
+            <button class="btn" onclick="resetFilter()"><i class="fa-solid fa-rotate-left"></i> 重置</button>
+          </div>
+          <div class="right">
+            <button class="btn btn-primary" onclick="showAddAreaModal()"><i class="fa-solid fa-plus"></i> 新增区域</button>
+            <button class="btn btn-danger" onclick="deleteSelectedAreas()"><i class="fa-solid fa-trash"></i> 删除</button>
+          </div>
+        </div>
+
+        <!-- 表格 -->
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th class="check-col"><input type="checkbox" id="selectAllAreas" /></th>
+                <th>区域名称</th>
+                <th>负责部门</th>
+                <th style="width:120px;">长度（km）</th>
+                <th style="width:100px;">车道数</th>
+                <th style="width:120px;">设备数</th>
+                <th style="width:120px;">操作</th>
+              </tr>
+            </thead>
+            <tbody id="areaTbody"></tbody>
+          </table>
+        </div>
+
+        <!-- 分页 -->
+        <div class="pagination">
+          <button class="btn" onclick="prevPage()">上一页</button>
+          <div id="pageNumbers"></div>
+          <button class="btn" onclick="nextPage()">下一页</button>
+        </div>
+      </div>
+
+      <!-- 新增区域弹窗 -->
+      <div id="addAreaModalOverlay" class="modal-overlay">
+        <div class="modal">
+          <div class="modal-header">
+            <span>新增区域</span>
+            <button class="modal-close" onclick="closeAddAreaModal()" title="关闭"><i class="fa-solid fa-xmark"></i></button>
+          </div>
+          <div class="modal-body">
+            <div class="form-row">
+              <div class="form-item">
+                <label for="areaNameInput">区域名称<span style="color:#e02424;margin-left:4px">*</span></label>
+                <input id="areaNameInput" class="input" placeholder="如：K120-K135 路段" required aria-required="true" />
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-item">
+                <label for="departmentInput">负责部门<span style="color:#e02424;margin-left:4px">*</span></label>
+                <select id="departmentInput" class="select" aria-required="true"></select>
+                <div style="font-size:12px;color:#9aa0a6;">请选择负责部门</div>
+              </div>
+              <div class="form-item">
+                <label for="lanesInput">车道数</label>
+                <input id="lanesInput" type="number" min="1" class="input" placeholder="如：4" />
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-item">
+                <label for="lengthInput">长度（km）</label>
+                <input id="lengthInput" type="number" step="0.1" min="0" class="input" placeholder="如：15.5" />
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn" onclick="closeAddAreaModal()">取消</button>
+            <button class="btn btn-primary" onclick="saveArea()">保存</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 编辑区域弹窗 -->
+      <div id="editAreaModalOverlay" class="modal-overlay" aria-modal="true" role="dialog">
+        <div class="modal" role="document">
+          <div class="modal-header">
+            <span>编辑区域</span>
+            <button class="modal-close" onclick="closeEditAreaModal()" title="关闭"><i class="fa-solid fa-xmark"></i></button>
+          </div>
+          <div class="modal-body">
+            <div class="form-row">
+              <div class="form-item">
+                <label for="editAreaNameInput">区域名称<span style="color:#e02424;margin-left:4px">*</span></label>
+                <input id="editAreaNameInput" class="input" placeholder="如：K120-K135 路段" required aria-required="true" />
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-item">
+                <label for="editDepartmentInput">负责部门<span style="color:#e02424;margin-left:4px">*</span></label>
+                <select id="editDepartmentInput" class="select" aria-required="true"></select>
+                <div style="font-size:12px;color:#9aa0a6;">可手动调整</div>
+              </div>
+              <div class="form-item">
+                <label for="editLanesInput">车道数</label>
+                <input id="editLanesInput" type="number" min="1" class="input" placeholder="如：4" />
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-item">
+                <label for="editLengthInput">长度（km）</label>
+                <input id="editLengthInput" type="number" step="0.1" min="0" class="input" placeholder="如：15.5" />
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn" onclick="closeEditAreaModal()">取消</button>
+            <button class="btn btn-primary" onclick="updateArea()">保存</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </app-layout>
+
+  <!-- 自定义确认弹窗 -->
+  <div id="confirmOverlay" class="modal-overlay" aria-modal="true" role="dialog">
+    <div class="modal" role="document">
+      <div class="modal-header"><span>确认删除</span></div>
+      <div class="modal-body"><div id="confirmMessage">确定要执行删除操作吗？删除后不可恢复！</div></div>
+      <div class="modal-footer">
+        <button class="btn" id="confirmCancelBtn">取消</button>
+        <button class="btn btn-primary" id="confirmOkBtn">确定</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 模拟路段与部门数据
+    const segments = [
+      { id: 'S1', name: 'G1 京哈高速 - 段A', department: '京哈高速管理处A' },
+      { id: 'S2', name: 'G2 京沪高速 - 段B', department: '京沪高速管理处B' },
+      { id: 'S3', name: 'G4 京港澳高速 - 段C', department: '京港澳高速管理处C' },
+      { id: 'S4', name: 'G45 大广高速 - 段D', department: '大广高速管理处D' },
+    ];
+
+    let areas = [
+      { id: 1, name: 'K100-K115', segmentId: 'S1', lengthKm: 15, lanes: 4, devices: 18 },
+      { id: 2, name: 'K200-K212', segmentId: 'S2', lengthKm: 12, lanes: 6, devices: 30 },
+      { id: 3, name: 'K50-K62',  segmentId: 'S3', lengthKm: 12, lanes: 4, devices: 20 },
+      { id: 4, name: 'K305-K320', segmentId: 'S4', lengthKm: 15, lanes: 6, devices: 26 },
+      { id: 5, name: 'K125-K140', segmentId: 'S1', lengthKm: 15, lanes: 4, devices: 12 },
+      { id: 6, name: 'K10-K25',   segmentId: 'S2', lengthKm: 15, lanes: 4, devices: 22 },
+    ];
+    const selectedAreaIds = new Set();
+    // 分页状态
+    let page = 1;
+    const pageSize = 5;
+    let filtered = areas.slice();
+
+    function initSegments() {
+      // 仅初始化负责部门选项（取消所属路段字段后）
+      initDepartments();
+      // 可选：为新增弹窗默认选中第一个部门，减少必填阻塞
+      const deptSelect = document.getElementById('departmentInput');
+      const firstDept = Array.from(new Set(segments.map(s => s.department)))[0];
+      if (deptSelect && firstDept) deptSelect.value = firstDept;
+    }
+
+    function initDepartments() {
+      const uniqueDepts = Array.from(new Set(segments.map(s => s.department)));
+      const deptSelectAdd = document.getElementById('departmentInput');
+      const deptSelectEdit = document.getElementById('editDepartmentInput');
+      const deptSelectSearch = document.getElementById('searchDepartment');
+      [deptSelectAdd, deptSelectEdit].forEach(sel => {
+        if (!sel) return;
+        sel.innerHTML = '';
+        uniqueDepts.forEach(d => {
+          const opt = document.createElement('option');
+          opt.value = d; opt.textContent = d; sel.appendChild(opt);
+        });
+      });
+
+      if (deptSelectSearch) {
+        deptSelectSearch.innerHTML = '';
+        const optAll = document.createElement('option');
+        optAll.value = ''; optAll.textContent = '全部';
+        deptSelectSearch.appendChild(optAll);
+        uniqueDepts.forEach(d => {
+          const opt = document.createElement('option');
+          opt.value = d; opt.textContent = d; deptSelectSearch.appendChild(opt);
+        });
+      }
+    }
+
+    function renderTable() {
+      const tbody = document.getElementById('areaTbody');
+      tbody.innerHTML = '';
+      const start = (page - 1) * pageSize;
+      const end = start + pageSize;
+      const pageItems = filtered.slice(start, end);
+      pageItems.forEach(item => {
+        const seg = segments.find(s => s.id === item.segmentId);
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class=\"check-col\"><input type=\"checkbox\" class=\"row-select\" data-id=\"${item.id}\" ${selectedAreaIds.has(item.id) ? 'checked' : ''}></td>
+          <td>${item.name}</td>
+          <td>${item.department || (seg ? seg.department : '未知')}</td>
+          <td>${item.lengthKm}</td>
+          <td>${item.lanes}</td>
+          <td>${item.devices}</td>
+          <td>
+            <div class=\"op-btns\">
+              <button class=\"btn btn-icon\" title=\"编辑\" onclick=\"editArea(${item.id})\"><i class=\"fa-solid fa-edit\"></i></button>
+            <button class=\"btn btn-icon btn-danger\" title=\"删除\" onclick=\"deleteArea(${item.id})\"><i class=\"fa-solid fa-trash\"></i></button>
+            </div>
+          </td>`;
+        tbody.appendChild(tr);
+      });
+
+      // 绑定行选择事件
+      Array.from(tbody.querySelectorAll('.row-select')).forEach(cb => {
+        cb.addEventListener('change', function() {
+          const id = parseInt(this.dataset.id, 10);
+          if (this.checked) selectedAreaIds.add(id); else selectedAreaIds.delete(id);
+          updateSelectAllAreasState();
+        });
+      });
+
+      updateSelectAllAreasState();
+      renderPagination();
+    }
+
+    function renderPagination() {
+      const container = document.getElementById('pageNumbers');
+      if (!container) return;
+      container.innerHTML = '';
+      const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+      for (let i = 1; i <= totalPages; i++) {
+        const btn = document.createElement('button');
+        btn.className = 'btn' + (i === page ? ' btn-primary' : '');
+        btn.textContent = String(i);
+        btn.onclick = () => { page = i; renderTable(); };
+        container.appendChild(btn);
+      }
+    }
+
+    function applyFilter() {
+      const name = document.getElementById('searchName').value.trim();
+      const dept = document.getElementById('searchDepartment')?.value || '';
+      filtered = areas.filter(a => {
+        const matchName = name ? a.name.includes(name) : true;
+        const areaDept = a.department || (segments.find(s => s.id === a.segmentId)?.department || '');
+        const matchDept = dept ? areaDept === dept : true;
+        return matchName && matchDept;
+      });
+      page = 1;
+      renderTable();
+    }
+
+    function resetFilter() {
+      document.getElementById('searchName').value = '';
+      const deptSel = document.getElementById('searchDepartment');
+      if (deptSel) deptSel.value = '';
+      filtered = areas.slice();
+      page = 1;
+      renderTable();
+    }
+
+    function prevPage() { if (page > 1) { page--; renderTable(); } }
+    function nextPage() {
+      const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+      if (page < totalPages) { page++; renderTable(); }
+    }
+
+    function showAddAreaModal() { document.getElementById('addAreaModalOverlay').classList.add('show'); }
+    function closeAddAreaModal() { document.getElementById('addAreaModalOverlay').classList.remove('show'); }
+
+    function saveArea() {
+      const name = document.getElementById('areaNameInput').value.trim();
+      const department = document.getElementById('departmentInput').value;
+      const lanes = parseInt(document.getElementById('lanesInput').value, 10) || 0;
+      const lengthKm = parseFloat(document.getElementById('lengthInput').value) || 0;
+      const devices = 0; // 设备数由系统计算或后续逻辑维护，新增时默认 0
+      const missing = [];
+      if (!name) missing.push('区域名称');
+      if (!department) missing.push('负责部门');
+      if (missing.length) {
+        if (window.Message && Message.warning) { Message.warning('请完善必填项：' + missing.join('、'), 3); }
+        else { alert('请完善必填项：' + missing.join('、')); }
+        return;
+      }
+      const id = areas.length ? Math.max(...areas.map(a => a.id)) + 1 : 1;
+      areas.push({ id, name, department, lanes, lengthKm, devices });
+      filtered = areas.slice();
+      page = 1;
+      renderTable();
+      closeAddAreaModal();
+      console.log(`[告警路由说明] 新增区域负责部门：${department || '未知部门'}；设备告警将通知该部门。`);
+    }
+
+    let editingAreaId = null;
+    function editArea(id) {
+      const area = areas.find(a => a.id === id);
+      if (!area) { alert('未找到该区域'); return; }
+
+      // 填充编辑表单
+      document.getElementById('editAreaNameInput').value = area.name || '';
+
+      // 负责部门选项与默认值
+      initDepartments();
+      const editDept = document.getElementById('editDepartmentInput');
+      if (editDept) editDept.value = area.department || '';
+
+      document.getElementById('editLanesInput').value = area.lanes ?? '';
+      document.getElementById('editLengthInput').value = area.lengthKm ?? '';
+
+      editingAreaId = id;
+      document.getElementById('editAreaModalOverlay').classList.add('show');
+    }
+
+    function closeEditAreaModal(){
+      document.getElementById('editAreaModalOverlay').classList.remove('show');
+      editingAreaId = null;
+    }
+
+    function updateArea(){
+      if (editingAreaId == null) return;
+      const name = document.getElementById('editAreaNameInput').value.trim();
+      const department = document.getElementById('editDepartmentInput').value;
+      const lanes = parseInt(document.getElementById('editLanesInput').value, 10) || 0;
+      const lengthKm = parseFloat(document.getElementById('editLengthInput').value) || 0;
+
+      const missing = [];
+      if (!name) missing.push('区域名称');
+      if (!department) missing.push('负责部门');
+      if (missing.length){
+        if (window.Message && Message.warning) { Message.warning('请完善必填项：' + missing.join('、'), 3); }
+        else { alert('请完善必填项：' + missing.join('、')); }
+        return;
+      }
+
+      const idx = areas.findIndex(a => a.id === editingAreaId);
+      if (idx === -1) { alert('更新失败：未找到区域'); return; }
+      const devices = areas[idx].devices || 0; // 保留设备数
+      areas[idx] = { id: editingAreaId, name, department, lanes, lengthKm, devices };
+      filtered = areas.slice();
+      renderTable();
+      closeEditAreaModal();
+    }
+    function updateSelectAllAreasState() {
+      const allCb = document.getElementById('selectAllAreas');
+      if (!allCb) return;
+      const checkboxes = document.querySelectorAll('#areaTbody .row-select');
+      const total = checkboxes.length;
+      const checked = Array.from(checkboxes).filter(cb => cb.checked).length;
+      allCb.indeterminate = (checked > 0 && checked < total);
+      allCb.checked = (total > 0 && checked === total);
+    }
+
+    // 全选（针对当前页可见行）
+    (function bindSelectAll(){
+      const allCb = document.getElementById('selectAllAreas');
+      if (!allCb) return;
+      allCb.addEventListener('change', function() {
+        const checkboxes = document.querySelectorAll('#areaTbody .row-select');
+        Array.from(checkboxes).forEach(cb => {
+          cb.checked = allCb.checked;
+          const id = parseInt(cb.dataset.id, 10);
+          if (allCb.checked) selectedAreaIds.add(id); else selectedAreaIds.delete(id);
+        });
+        updateSelectAllAreasState();
+      });
+    })();
+    function deleteArea(id) {
+      showConfirm('确认删除该区域吗？删除后不可恢复！', () => {
+        areas = areas.filter(a => a.id !== id);
+        filtered = areas.slice();
+        selectedAreaIds.delete(id);
+        const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+        if (page > totalPages) page = totalPages;
+        renderTable();
+      });
+    }
+
+    // 头部批量删除：未勾选行时提示
+    function deleteSelectedAreas(){
+      if (selectedAreaIds.size === 0) { Message.warning('请选择需要删除的数据！', 2); return; }
+      showConfirm('确定删除选中区域吗？删除后不可恢复！', () => {
+        // 批量删除占位：后续可实现真实删除逻辑
+        console.log('批量删除功能待实现，选中项数量：', selectedAreaIds.size);
+      });
+    }
+
+    function showConfirm(message, onConfirm) {
+      const overlay = document.getElementById('confirmOverlay');
+      const msgEl = document.getElementById('confirmMessage');
+      const okBtn = document.getElementById('confirmOkBtn');
+      const cancelBtn = document.getElementById('confirmCancelBtn');
+      msgEl.textContent = message;
+      overlay.classList.add('show');
+      const cleanup = () => { overlay.classList.remove('show'); okBtn.onclick = null; cancelBtn.onclick = null; };
+      cancelBtn.onclick = cleanup;
+      okBtn.onclick = () => { cleanup(); try { onConfirm && onConfirm(); } catch (e) { console.error(e); } };
+    }
+
+    // 初始化
+    initSegments();
+    renderTable();
+  </script>
+</body>
+</html>

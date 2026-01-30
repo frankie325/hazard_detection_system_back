@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-label="高速公路危害识别与应急指挥系统标志">
+  <defs>
+    <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00e5ff"/>
+      <stop offset="100%" stop-color="#2563eb"/>
+    </linearGradient>
+    <linearGradient id="roadGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0ea5e9"/>
+      <stop offset="100%" stop-color="#2563eb"/>
+    </linearGradient>
+    <style>
+      :root {
+        --primary: #00e5ff; /* 霓虹青蓝 */
+        --accent: #2563eb; /* 科技蓝 */
+        --warning: #f59e0b; /* 告警橙 */
+        --dark: #0f172a;    /* 深海军蓝 */
+      }
+      .stroke-primary { stroke: var(--primary); }
+      .stroke-accent { stroke: var(--accent); }
+      .fill-warning { fill: var(--warning); }
+      .stroke-white { stroke: #ffffff; }
+      .no-fill { fill: none; }
+      .cap-round { stroke-linecap: round; stroke-linejoin: round; }
+    </style>
+  </defs>
+
+  <!-- 外环（未来科技感渐变描边） -->
+  <circle cx="128" cy="128" r="110" fill="none" stroke="url(#ringGrad)" stroke-width="10"/>
+
+  <!-- 雷达扫描弧线（识别/检测意象） -->
+  <path class="no-fill stroke-primary cap-round" d="M 96 34 A 32 32 0 0 1 160 34" stroke-width="4" opacity="0.8"/>
+  <path class="no-fill stroke-primary cap-round" d="M 82 24 A 46 46 0 0 1 174 24" stroke-width="3" opacity="0.6"/>
+  <path class="no-fill stroke-primary cap-round" d="M 66 14 A 62 62 0 0 1 190 14" stroke-width="2" opacity="0.4"/>
+
+  <!-- 高速公路侧边线（透视） -->
+  <path class="no-fill stroke-accent cap-round" d="M 114 40 L 70 210" stroke-width="6"/>
+  <path class="no-fill stroke-accent cap-round" d="M 142 40 L 186 210" stroke-width="6"/>
+
+  <!-- 中央车道虚线 -->
+  <path class="no-fill stroke-primary cap-round" d="M 128 54 L 128 196" stroke-width="5" stroke-dasharray="14 12"/>
+
+  <!-- 告警三角形（置于道路上方） -->
+  <polygon class="fill-warning cap-round" points="128,60 108,98 148,98"/>
+  <!-- 三角形中的感叹号 -->
+  <path class="no-fill stroke-white cap-round" d="M 128 72 L 128 90" stroke-width="5"/>
+  <circle cx="128" cy="96" r="3.5" fill="#ffffff"/>
+
+  <!-- 指挥/调度感的双箭头（底部轻量点缀） -->
+  <path class="no-fill stroke-primary cap-round" d="M 88 218 L 110 206 L 120 214" stroke-width="4" opacity="0.7"/>
+  <path class="no-fill stroke-primary cap-round" d="M 168 218 L 146 206 L 136 214" stroke-width="4" opacity="0.7"/>
+
+  <!-- 低调的道路渐变阴影（增加科技质感，不影响透明背景） -->
+  <path d="M 114 40 L 142 40 L 186 210 L 70 210 Z" fill="url(#roadGrad)" opacity="0.06"/>
+</svg>

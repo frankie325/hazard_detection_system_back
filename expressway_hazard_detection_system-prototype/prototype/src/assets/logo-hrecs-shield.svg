@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-label="高速公路危害识别与应急指挥系统标志-盾形">
+  <defs>
+    <linearGradient id="shieldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00e5ff"/>
+      <stop offset="100%" stop-color="#2563eb"/>
+    </linearGradient>
+    <style>
+      .no-fill { fill: none; }
+      .cap-round { stroke-linecap: round; stroke-linejoin: round; }
+    </style>
+  </defs>
+  <!-- 盾形轮廓（安全/防护） -->
+  <path d="M128 20 C160 36 184 36 212 44 C212 124 192 184 128 220 C64 184 44 124 44 44 C72 36 96 36 128 20 Z" fill="none" stroke="url(#shieldGrad)" stroke-width="10"/>
+  <!-- 道路与车道虚线 -->
+  <path class="no-fill cap-round" d="M 94 50 L 74 206" stroke="#2563eb" stroke-width="6"/>
+  <path class="no-fill cap-round" d="M 162 50 L 182 206" stroke="#2563eb" stroke-width="6"/>
+  <path class="no-fill cap-round" d="M 128 66 L 128 196" stroke="#00e5ff" stroke-width="5" stroke-dasharray="12 10"/>
+  <!-- 顶部告警灯（应急指挥） -->
+  <rect x="114" y="34" width="28" height="16" rx="4" fill="#f59e0b"/>
+  <path class="no-fill cap-round" d="M 128 34 L 128 22" stroke="#f59e0b" stroke-width="4"/>
+  <!-- 雷达扫描线 -->
+  <path class="no-fill cap-round" d="M 70 90 A 64 64 0 0 1 186 90" stroke="#00e5ff" stroke-width="3" opacity="0.5"/>
+  <path class="no-fill cap-round" d="M 64 120 A 72 72 0 0 1 192 120" stroke="#00e5ff" stroke-width="2" opacity="0.4"/>
+</svg>

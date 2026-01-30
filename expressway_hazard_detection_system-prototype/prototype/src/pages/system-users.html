@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>系统管理 · 用户管理</title>
+  <link rel="icon" href="../assets/logo-hrecs-radar.svg" type="image/svg+xml">
+  <!-- 基础样式与图标库 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <script src="../components/app-layout.js"></script>
+  <style>
+    :root {
+      --blue-6: #2F54EB; /* 现代简约蓝 */
+      --blue-5: #3B6AE8;
+      --blue-4: #5C85F5;
+      --text-strong: #1f2937;
+      --text-muted: rgba(0,0,0,.45);
+      --bg-body: #f6f8fc;
+      --bg-card: #ffffff;
+      --border: #e5e7eb;
+      --radius-lg: 16px;
+      --radius-md: 12px;
+      --shadow: 0 10px 30px rgba(37,99,235,.12);
+    }
+    html, body { height:100%; }
+    body { margin:0; background: var(--bg-body); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', 'PingFang SC', 'Microsoft YaHei', sans-serif; }
+
+    /* 布局骨架 */
+    .app { min-height: 100vh; display:grid; grid-template-columns: 240px 1fr; }
+    .sider { background: var(--bg-card); border-right: 1px solid var(--border); padding: 18px 16px; }
+    .sider-header { display:flex; align-items:center; gap:10px; padding: 8px 10px; border-radius: var(--radius-md); }
+    .logo { width:32px; height:32px; border-radius:50%; background: linear-gradient(135deg, var(--blue-6), var(--blue-4)); display:flex; align-items:center; justify-content:center; color:#fff; font-weight:700; }
+    .title { font-weight:600; color: var(--text-strong); }
+
+    .menu { margin-top: 16px; }
+    .menu-group { margin: 10px 0; }
+    .menu-title { display:none; }
+    .menu-list { list-style:none; margin:0; padding:0; }
+    .menu-item { display:flex; align-items:center; gap:10px; padding: 10px 12px; border-radius: 10px; cursor:pointer; color:#374151; }
+    .menu-item:hover { background:#f0f5ff; }
+    .menu-item.active { background:#e6f0ff; color: var(--blue-6); }
+    .menu-item .icon { width:20px; height:20px; display:inline-flex; align-items:center; justify-content:center; color: var(--blue-6); }
+    .submenu { margin-left: 10px; border-left: 2px dashed #eef2ff; padding-left: 8px; }
+
+    /* 将主内容区域高度设置为 100vh，内容区为 100vh - 头部 64px */
+    .main { height: 100vh; display:grid; grid-template-rows: 64px 1fr; }
+    .header { background: var(--bg-card); border-bottom: 1px solid var(--border); display:flex; align-items:center; justify-content:space-between; padding: 0 16px; }
+    .header-left { display:flex; align-items:center; gap:12px; color: var(--text-strong); }
+    .header-right { display:flex; align-items:center; gap:16px; }
+    /* 面包屑：展示菜单层级 */
+    .breadcrumb { display:flex; align-items:center; gap:8px; font-size:14px; }
+    .breadcrumb .crumb { color: rgba(0,0,0,.65); }
+    .breadcrumb .crumb.current { color: var(--text-strong); font-weight:600; }
+    .breadcrumb .sep { color: #d9d9d9; }
+    .breadcrumb a { color: rgba(0,0,0,.85); text-decoration:none; }
+    .breadcrumb a:hover { color: var(--blue-6); }
+    .bell { width:28px; height:28px; border-radius: 50%; background:#f0f5ff; display:flex; align-items:center; justify-content:center; color: var(--blue-6); cursor:pointer; }
+    .avatar-wrap { position:relative; }
+    .avatar { width:32px; height:32px; border-radius:50%; background:#c1d4ff; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:600; cursor:pointer; }
+    .user-menu { position:absolute; right:0; top:38px; background:#fff; border:1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow); list-style:none; padding:6px 0; margin:0; display:none; min-width:140px; z-index:20; }
+    .avatar-wrap:hover .user-menu { display:block; }
+    .user-menu li { padding:8px 12px; font-size:14px; color:#374151; cursor:pointer; }
+    .user-menu li:hover { background:#f5f7fa; }
+
+    /* 主内容区域填满高度，卡片内采用纵向布局，表格区域可滚动 */
+    .content { padding: 0; height: 100%; box-sizing:border-box; }
+    .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow); height: 100%; display:flex; flex-direction: column; }
+
+    /* 用户管理：工具栏、表格、分页 */
+    .toolbar { display:flex; align-items:center; justify-content:space-between; padding: 16px; border-bottom:1px solid var(--border); }
+    .toolbar .left { display:flex; align-items:center; gap:12px; }
+    /* 标签与输入框同一水平线 */
+    .toolbar .left > div { display:flex; align-items:center; gap:8px; }
+    /* 选择器宽度统一 */
+    .toolbar .select { width: 180px; }
+    .toolbar .right { display:flex; align-items:center; gap:10px; }
+    /* 输入与选择：模仿 Ant Design 中等尺寸 */
+    .input, .select {
+      height: 32px;
+      line-height: 32px;
+      border-radius: 6px;
+      padding: 4px 11px;
+      border: 1px solid #d9d9d9;
+      background: #fff;
+      color: #333;
+      font-size: 14px;
+      box-sizing: border-box;
+      outline: none;
+      transition: border-color .2s ease, box-shadow .2s ease;
+    }
+    .input:focus, .select:focus {
+      border-color: var(--blue-6);
+      box-shadow: 0 0 0 2px rgba(47, 84, 235, 0.2); /* 与 --blue-6 对齐的 focus 视觉 */
+    }
+    /* 按钮：模仿 Ant Design 中等尺寸 */
+    .btn {
+      height: 32px;
+      padding: 0 15px;
+      border-radius: 6px;
+      border: 1px solid #d9d9d9;
+      background: #fff;
+      color: #444;
+      cursor: pointer;
+      transition: background-color .2s ease, border-color .2s ease, color .2s ease;
+    }
+    .btn:hover { background: #f5f5f5; }
+    .btn:active { background: #f0f0f0; }
+    .btn-primary {
+      background: var(--blue-6);
+      border-color: var(--blue-6);
+      color: #fff;
+    }
+    .btn-primary:hover { background: var(--blue-5); border-color: var(--blue-5); }
+    .btn-danger { background: #ff4d4f; border-color: #ff4d4f; color: #fff; }
+    .btn-danger:hover { background: #f5222d; border-color: #f5222d; }
+    /* 列表操作按钮与分页按钮高度统一 */
+    .op-btns .btn { height: 32px; padding: 0 12px; font-size: 12px; }
+    /* 底部分页区域内边距与水平居中 */
+    .pagination { padding: 12px 16px; display:flex; align-items:center; justify-content:center; gap:8px; }
+    .pagination .btn { height: 32px; }
+
+    /* 列表重置：去除 ul/li 默认样式 */
+    .sys-menu, .sys-menu ul { list-style: none; margin: 0; padding: 0; }
+    .sys-menu li { list-style: none; margin: 0; padding: 0; }
+    /* 根菜单上下内边距 */
+    .sys-menu-root { padding: 8px 0; }
+    /* 菜单选中态颜色与图标颜色统一使用主题色 */
+    .sys-menu-item, .sys-menu-submenu-title { display:flex; align-items:center; justify-content:space-between; height:40px; line-height:40px; padding:0 16px; margin:0; border-radius:6px; cursor:pointer; color: rgba(0,0,0,.85); transition: all .2s ease; }
+    /* 图标与名称的边距（使用 flex gap） */
+    .sys-menu-item .left, .sys-menu-submenu-title .left { display:flex; align-items:center; gap:10px; }
+    .sys-menu-item.is-active { background:#e6f7ff; color: var(--blue-6); }
+    .sys-menu-item.is-active .icon { color: var(--blue-6); }
+    .sys-menu-submenu > .sys-menu { padding-left:24px; }
+    /* 图标统一为 FontAwesome 尺寸与布局 */
+    .sys-menu .icon { font-size: 14px; width: 16px; display:inline-flex; align-items:center; justify-content:center; }
+    .sys-menu-submenu-title .caret { color:#8c8c8c; font-size:12px; transition: transform .2s ease; }
+    .sys-menu-submenu.sys-open .sys-menu-submenu-title .caret { transform: rotate(180deg); }
+
+    /* 表格样式：对齐 Ant Design Table 视觉 */
+    .table-wrap { flex: 1; overflow: auto; }
+    .table-wrap table { width: 100%; border-collapse: separate; border-spacing: 0; }
+    .table-wrap thead th {
+      background: #fafafa;
+      font-weight: 500;
+      font-size: 14px;
+      color: rgba(0,0,0,.88);
+      padding: 12px 16px;
+      border-bottom: 1px solid #f0f0f0;
+      text-align: left;
+    }
+    .table-wrap tbody td {
+      padding: 12px 16px;
+      border-bottom: 1px solid #f0f0f0;
+      color: rgba(0,0,0,.88);
+    }
+    .table-wrap tbody tr:hover td { background: #fafafa; }
+    .table-wrap th:first-child, .table-wrap td:first-child { text-align: center; width: 40px; }
+    .table-wrap .op-btns { display:flex; align-items:center; justify-content:center; gap:8px; }
+
+    /* 弹窗样式 */
+    .modal-overlay { position: fixed; inset:0; background: rgba(0, 0, 0, 0.45); display: none; align-items: center; justify-content: center; z-index: 1000; }
+    .modal-overlay.show { display: flex; }
+    .modal { background: #fff; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); width: 560px; max-width: 90vw; overflow: hidden; }
+    .modal-header { padding: 12px 16px; border-bottom: 1px solid #f0f0f0; display:flex; align-items:center; justify-content:space-between; }
+    .modal-close { width:28px; height:28px; border-radius:50%; border:0; background:transparent; color:#666; display:flex; align-items:center; justify-content:center; cursor:pointer; }
+    .modal-close:hover { background:#f5f5f5; }
+    .modal-close:active { background:#eee; }
+    .modal-body { padding: 16px; }
+    .form-group { margin-bottom: 12px; }
+    .form-label { display:block; margin-bottom:6px; color:#666; }
+    .form-input, .form-select { width:100%; border:1px solid #d9d9d9; border-radius:6px; padding:8px; box-sizing:border-box; height:36px; }
+    .form-textarea { width:100%; border:1px solid #d9d9d9; border-radius:6px; padding:8px; box-sizing:border-box; height:80px; }
+    .modal-footer { display:flex; justify-content:flex-end; gap:8px; padding: 8px 16px; border-top:1px solid #f0f0f0; }
+  </style>
+</head>
+<body>
+  <app-layout active="users" breadcrumb="系统管理 / 用户管理">
+    <section slot="content" class="content">
+      <div class="card">
+        <!-- 头部搜索区域 -->
+        <div class="toolbar">
+          <div class="left">
+            <div>
+              <div style="font-size:12px;color:var(--text-muted);">姓名</div>
+              <input id="searchUserName" class="input" placeholder="请输入姓名" />
+            </div>
+            <div>
+              <div style="font-size:12px;color:var(--text-muted);">所属部门</div>
+              <select id="searchDepartment" class="select">
+                <option value="">全部</option>
+                <option>研发部</option>
+                <option>测试部</option>
+                <option>运营部</option>
+              </select>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;margin-left:8px;">
+              <button class="btn" id="btnUserSearch"><i class="fa-solid fa-search"></i> 搜索</button>
+              <button class="btn" id="btnUserReset"><i class="fa-solid fa-rotate-left"></i> 重置</button>
+            </div>
+          </div>
+          <div class="right">
+            <button class="btn btn-primary" onclick="showAddModal()"><i class="fa-solid fa-plus"></i> 新增</button>
+            <button class="btn btn-danger" onclick="deleteSelectedUsers()"><i class="fa-solid fa-trash"></i> 删除</button>
+          </div>
+        </div>
+
+        <!-- 中间表格区域 -->
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:40px"><input type="checkbox" /></th>
+                <th style="width:80px">姓名</th>
+                <th style="width:60px">性别</th>
+                <th style="width:100px">用户名</th>
+                <th style="width:120px">手机号码</th>
+                <th style="width:160px">身份证</th>
+                <th style="width:120px">所属部门</th>
+                <th style="width:120px">所属角色</th>
+                <th style="width:160px">操作</th>
+              </tr>
+            </thead>
+            <tbody id="userTbody"></tbody>
+          </table>
+        </div>
+
+        <!-- 底部分页 -->
+        <div class="pagination">
+          <button class="btn">上一页</button>
+          <button class="btn btn-primary">1</button>
+          <button class="btn">2</button>
+          <button class="btn">3</button>
+          <button class="btn">下一页</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 新增用户弹窗 -->
+    <div slot="content" id="userModalOverlay" class="modal-overlay" aria-modal="true" role="dialog">
+      <div class="modal" role="document">
+        <div class="modal-header">
+          <div>新增用户</div>
+          <button class="modal-close" onclick="closeUserModal()" title="关闭"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group"><label class="form-label">姓名<span style="color:#e02424;margin-left:4px">*</span></label><input id="formName" class="form-input" placeholder="请输入姓名" required aria-required="true" /></div>
+          <div class="form-group"><label class="form-label">用户名<span style="color:#e02424;margin-left:4px">*</span></label><input id="formUsername" class="form-input" placeholder="请输入用户名" required aria-required="true" /></div>
+          <div class="form-group"><label class="form-label">性别<span style="color:#e02424;margin-left:4px">*</span></label><select id="formGender" class="form-select" required aria-required="true"><option>男</option><option>女</option></select></div>
+          <div class="form-group"><label class="form-label">所属角色<span style="color:#e02424;margin-left:4px">*</span></label><select id="formRole" class="form-select" required aria-required="true"></select></div>
+          <div class="form-group"><label class="form-label">手机号码<span style="color:#e02424;margin-left:4px">*</span></label><input id="formPhone" class="form-input" placeholder="请输入手机号码" required aria-required="true" /></div>
+          <div class="form-group"><label class="form-label">身份证<span style="color:#e02424;margin-left:4px">*</span></label><input id="formIdcard" class="form-input" placeholder="请输入身份证号" required aria-required="true" /></div>
+          <div class="form-group"><label class="form-label">备注</label><textarea id="formRemark" class="form-textarea" placeholder="备注（可选）"></textarea></div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn" onclick="closeUserModal()">取消</button>
+          <button class="btn btn-primary" onclick="saveUser()">保存</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 编辑用户弹窗 -->
+    <div slot="content" id="editUserModalOverlay" class="modal-overlay" aria-modal="true" role="dialog">
+      <div class="modal" role="document">
+        <div class="modal-header">
+          <div>编辑用户</div>
+          <button class="modal-close" onclick="closeEditUserModal()" title="关闭"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group"><label class="form-label">姓名<span style="color:#e02424;margin-left:4px">*</span></label><input id="editFormName" class="form-input" placeholder="请输入姓名" required aria-required="true" /></div>
+          <div class="form-group"><label class="form-label">用户名<span style="color:#e02424;margin-left:4px">*</span></label><input id="editFormUsername" class="form-input" placeholder="请输入用户名" required aria-required="true" /></div>
+          <div class="form-group"><label class="form-label">性别<span style="color:#e02424;margin-left:4px">*</span></label><select id="editFormGender" class="form-select" required aria-required="true"><option>男</option><option>女</option></select></div>
+          <div class="form-group"><label class="form-label">所属部门</label><input id="editFormDepartment" class="form-input" placeholder="请输入所属部门" /></div>
+          <div class="form-group"><label class="form-label">所属角色<span style="color:#e02424;margin-left:4px">*</span></label><select id="editFormRole" class="form-select" required aria-required="true"></select></div>
+          <div class="form-group"><label class="form-label">手机号码<span style="color:#e02424;margin-left:4px">*</span></label><input id="editFormPhone" class="form-input" placeholder="请输入手机号码" required aria-required="true" /></div>
+          <div class="form-group"><label class="form-label">身份证<span style="color:#e02424;margin-left:4px">*</span></label><input id="editFormIdcard" class="form-input" placeholder="请输入身份证号" required aria-required="true" /></div>
+          <div class="form-group"><label class="form-label">备注</label><textarea id="editFormRemark" class="form-textarea" placeholder="备注（可选）"></textarea></div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn" onclick="closeEditUserModal()">取消</button>
+          <button class="btn btn-primary" onclick="updateUser()">保存</button>
+        </div>
+      </div>
+    </div>
+  </app-layout>
+<script>
+  // 父菜单展开/折叠（不依赖 ant-design-vue 类名）
+  document.addEventListener('DOMContentLoaded', function(){
+    var submenu = document.querySelector('.sys-menu-submenu');
+    var title = document.querySelector('.sys-menu-submenu-title');
+    if (submenu && title){
+      title.addEventListener('click', function(){
+        submenu.classList.toggle('sys-open');
+      });
+    }
+  });
+
+  // 用户数据与渲染
+  const rolesOptions = ["系统管理员", "部门主管", "值班人员"];
+  const userData = [
+    { name: "张三", gender: "男", username: "zhangsan", phone: "13800000001", idcard: "110101199001010011", department: "研发部", role: "系统管理员" },
+    { name: "李四", gender: "女", username: "lisi", phone: "13800000002", idcard: "110101199202020022", department: "测试部", role: "部门主管" },
+    { name: "王五", gender: "男", username: "wangwu", phone: "13800000003", idcard: "110101199503030033", department: "运营部", role: "值班人员" }
+  ];
+
+  function renderUsers(list){
+    const tbody = document.getElementById('userTbody');
+    if(!tbody) return;
+    const data = Array.isArray(list) ? list : userData;
+    tbody.innerHTML = data.map((u, idx) => `
+      <tr>
+        <td><input type="checkbox" data-index="${idx}" /></td>
+        <td>${u.name}</td>
+        <td>${u.gender}</td>
+        <td>${u.username}</td>
+        <td>${u.phone}</td>
+        <td>${u.idcard}</td>
+        <td>${u.department}</td>
+        <td>${u.role}</td>
+        <td class="op-btns">
+          <button class="btn" onclick="showEditUserModal(${idx})" title="编辑"><i class="fa-solid fa-edit"></i></button>
+            <button class="btn btn-danger" onclick="deleteUser(${idx})" title="删除"><i class="fa-solid fa-trash"></i></button>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  // 搜索与重置
+  function applyFilter(){
+    const name = (document.getElementById('searchUserName')?.value || '').trim();
+    const dept = (document.getElementById('searchDepartment')?.value || '').trim();
+    const list = userData.filter(u => {
+      const matchName = name ? (u.name.includes(name) || u.username.includes(name) || u.phone.includes(name)) : true;
+      const matchDept = dept ? (u.department === dept) : true;
+      return matchName && matchDept;
+    });
+    renderUsers(list);
+  }
+  function resetFilter(){
+    const nameInput = document.getElementById('searchUserName'); if(nameInput) nameInput.value='';
+    const deptSelect = document.getElementById('searchDepartment'); if(deptSelect) deptSelect.value='';
+    renderUsers(userData);
+  }
+
+  function deleteUser(index){
+    showConfirm('确定删除该用户吗？删除后不可恢复！', () => {
+      userData.splice(index, 1);
+      renderUsers();
+    });
+  }
+
+  // 头部批量删除：未勾选行时提示
+  function deleteSelectedUsers(){
+    const tbody = document.getElementById('userTbody');
+    if(!tbody) return;
+    const checked = Array.from(tbody.querySelectorAll('input[type="checkbox"]')).filter(cb => cb.checked);
+    if (checked.length === 0) { Message.warning('请选择需要删除的数据！', 2); return; }
+    showConfirm('确定删除选中用户吗？删除后不可恢复！', () => {
+      // 批量删除占位：后续可实现真实删除逻辑
+      console.log('批量删除功能待实现，选中项数量：', checked.length);
+    });
+  }
+
+  function showConfirm(message, onConfirm){
+    const overlay = document.getElementById('confirmOverlay');
+    const msgEl = document.getElementById('confirmMessage');
+    const okBtn = document.getElementById('confirmOkBtn');
+    const cancelBtn = document.getElementById('confirmCancelBtn');
+    msgEl.textContent = message;
+    overlay.classList.add('show');
+    const cleanup = () => { overlay.classList.remove('show'); okBtn.onclick = null; cancelBtn.onclick = null; };
+    cancelBtn.onclick = cleanup;
+    okBtn.onclick = () => { cleanup(); try { onConfirm && onConfirm(); } catch(e){ console.error(e); } };
+  }
+
+  // 新增弹窗逻辑
+  function showAddModal(){
+    const overlay = document.getElementById('userModalOverlay');
+    if(overlay){ overlay.classList.add('show'); }
+    // 角色下拉选项渲染
+    const roleSelect = document.getElementById('formRole');
+    if(roleSelect){
+      roleSelect.innerHTML = rolesOptions.map(r => `<option value="${r}">${r}</option>`).join('');
+    }
+  }
+  function closeUserModal(){
+    const overlay = document.getElementById('userModalOverlay');
+    if(overlay){ overlay.classList.remove('show'); }
+  }
+  function saveUser(){
+    const name = document.getElementById('formName').value.trim();
+    const gender = document.getElementById('formGender').value;
+    const username = document.getElementById('formUsername').value.trim();
+    const phone = document.getElementById('formPhone').value.trim();
+    const idcard = document.getElementById('formIdcard').value.trim();
+    const role = document.getElementById('formRole').value;
+    const remark = document.getElementById('formRemark').value.trim();
+
+    const missing = [];
+    if(!name) missing.push('姓名');
+    if(!gender) missing.push('性别');
+    if(!username) missing.push('用户名');
+    if(!role) missing.push('角色');
+    if(!phone) missing.push('手机号');
+    if(!idcard) missing.push('身份证号');
+    if(missing.length){
+      if (window.Message && Message.warning) { Message.warning('请完善必填项：' + missing.join('、'), 3); }
+      else { alert('请完善必填项：' + missing.join('、')); }
+      return;
+    }
+
+    userData.push({ name, gender, username, phone, idcard, department: '未分配', role, remark });
+    renderUsers();
+    closeUserModal();
+    // 清空表单
+    document.getElementById('formName').value='';
+    document.getElementById('formGender').value='男';
+    document.getElementById('formUsername').value='';
+    document.getElementById('formPhone').value='';
+    document.getElementById('formIdcard').value='';
+    document.getElementById('formRole').value=rolesOptions[0];
+    document.getElementById('formRemark').value='';
+  }
+
+  let editingUserIndex = -1;
+
+  function showEditUserModal(index) {
+    editingUserIndex = index;
+    const user = userData[index];
+    
+    // 填充编辑表单
+    document.getElementById('editFormName').value = user.name;
+    document.getElementById('editFormUsername').value = user.username;
+    document.getElementById('editFormGender').value = user.gender;
+    document.getElementById('editFormDepartment').value = user.department || '';
+    document.getElementById('editFormPhone').value = user.phone || '';
+    document.getElementById('editFormIdcard').value = user.idcard || '';
+    document.getElementById('editFormRemark').value = user.remark || '';
+    
+    // 填充角色选项
+    const editRoleSelect = document.getElementById('editFormRole');
+    editRoleSelect.innerHTML = rolesOptions.map(role => `<option value="${role}">${role}</option>`).join('');
+    editRoleSelect.value = user.role;
+    
+    document.getElementById('editUserModalOverlay').style.display = 'flex';
+  }
+
+  function closeEditUserModal() {
+    document.getElementById('editUserModalOverlay').style.display = 'none';
+    editingUserIndex = -1;
+  }
+
+  function updateUser() {
+    if (editingUserIndex === -1) return;
+    
+    const name = document.getElementById('editFormName').value.trim();
+    const username = document.getElementById('editFormUsername').value.trim();
+    const gender = document.getElementById('editFormGender').value;
+    const department = document.getElementById('editFormDepartment').value.trim();
+    const role = document.getElementById('editFormRole').value;
+    const phone = document.getElementById('editFormPhone').value.trim();
+    const idcard = document.getElementById('editFormIdcard').value.trim();
+    const remark = document.getElementById('editFormRemark').value.trim();
+    
+    const missing = [];
+    if(!name) missing.push('姓名');
+    if(!gender) missing.push('性别');
+    if(!username) missing.push('用户名');
+    if(!role) missing.push('角色');
+    if(!phone) missing.push('手机号');
+    if(!idcard) missing.push('身份证号');
+    if(missing.length){
+      if (window.Message && Message.warning) { Message.warning('请完善必填项：' + missing.join('、'), 3); }
+      else { alert('请完善必填项：' + missing.join('、')); }
+      return;
+    }
+    
+    // 更新用户数据
+    userData[editingUserIndex] = { name, username, gender, department, role, phone, idcard, remark };
+    
+    renderUsers();
+    closeEditUserModal();
+  }
+
+  // 页面初始化渲染与事件绑定
+  document.addEventListener('DOMContentLoaded', function(){
+    renderUsers();
+    const btnSearch = document.getElementById('btnUserSearch');
+    const btnReset = document.getElementById('btnUserReset');
+    if (btnSearch) btnSearch.onclick = applyFilter;
+    if (btnReset) btnReset.onclick = resetFilter;
+  });
+</script>
+</body>
+</html>
+    <!-- 自定义确认弹窗 -->
+    <div slot="content" id="confirmOverlay" class="modal-overlay" aria-modal="true" role="dialog">
+      <div class="modal" role="document">
+        <div class="modal-header"><div>确认删除</div></div>
+        <div class="modal-body"><div id="confirmMessage">确定要执行删除操作吗？删除后不可恢复！</div></div>
+        <div class="modal-footer">
+          <button class="btn" id="confirmCancelBtn">取消</button>
+          <button class="btn btn-primary" id="confirmOkBtn">确定</button>
+        </div>
+      </div>
+    </div>

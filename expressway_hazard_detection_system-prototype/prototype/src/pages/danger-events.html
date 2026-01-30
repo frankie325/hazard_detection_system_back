@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>危险检测 · 事件流</title>
+    <link rel="stylesheet" href="../css/styles.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    <script src="../components/app-layout.js"></script>
+    <style>
+      /* 统一与其他页面风格：toolbar、表格、分页 */
+      .content { padding: 0; height: 100%; box-sizing: border-box; }
+      .card { background: #fff; border: 1px solid var(--border); border-radius: 16px; box-shadow: 0 10px 30px rgba(37,99,235,.12); height: 100%; display: flex; flex-direction: column; }
+      .toolbar { display: flex; align-items: center; justify-content: space-between; padding: 16px; border-bottom: 1px solid var(--border); }
+      .toolbar .left { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+      .toolbar .right { display: flex; align-items: center; gap: 10px; }
+      .toolbar .left > div { display:flex; align-items:center; gap:8px; }
+      .toolbar .label { font-size:12px; color:#6b7280; white-space:nowrap; }
+      .toolbar .break { flex-basis: 100%; height: 0; }
+
+      .input, .select { height: 32px; line-height: 32px; border-radius: 6px; padding: 4px 11px; border: 1px solid #d9d9d9; background: #fff; font-size: 14px; box-sizing: border-box; }
+      .btn { height: 32px; padding: 0 15px; border-radius: 6px; border: 1px solid #d9d9d9; background: #fff; cursor: pointer; white-space:nowrap; }
+      .btn-primary { background: var(--blue-6); border-color: var(--blue-6); color: #fff; }
+
+      .table-wrap { flex: 1; overflow: auto; }
+      table { width: 100%; border-collapse: separate; border-spacing: 0; }
+      thead th { background: #fafafa; font-weight: 500; font-size: 14px; color: rgba(0,0,0,.88); padding: 12px 16px; border-bottom: 1px solid #f0f0f0; text-align: left; }
+      tbody td { padding: 12px 16px; border-bottom: 1px solid #f0f0f0; color: rgba(0,0,0,.88); }
+      .cell-muted { color:#6b7280; font-size:12px; }
+      /* 参考 Ant Design Vue 进度条样式（line） */
+      .confidence-bar { width: 120px; height: 8px; background: #f5f5f5; border-radius: 100px; overflow: hidden; display: inline-block; vertical-align: middle; margin: 0 6px; position: relative; }
+      .confidence-fill { display:block; height: 100%; border-radius: 100px; transition: width .3s ease; }
+      .empty { color: var(--text-muted); padding: 12px 6px; }
+
+      .pagination { padding: 12px 16px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+      .pagination .btn { height: 32px; }
+      .pagination .select { height: 32px; }
+      .pagination #pageNumbers { display:flex; align-items:center; gap:8px; }
+      .page-info { color: #6b7280; font-size: 12px; }
+    </style>
+  </head>
+  <body>
+    <app-layout active="danger-events" breadcrumb="危险检测 / 事件流">
+      <section slot="content" class="content">
+        <div class="card">
+          <div class="toolbar">
+            <div class="left">
+              <div>
+                <span class="label">事件名称</span>
+                <select id="filterType" class="select" style="width:180px;">
+                  <option value="">事件名称（全部）</option>
+                  <option value="抛洒物">抛洒物</option>
+                  <option value="塌方">塌方</option>
+                  <option value="火灾">火灾</option>
+                  <option value="交通事故">交通事故</option>
+                </select>
+              </div>
+              <div>
+                <span class="label">区域</span>
+                <select id="filterArea" class="select" style="width:180px;"></select>
+              </div>
+              <div>
+                <span class="label">设备</span>
+                <select id="filterDevice" class="select" style="width:180px;"></select>
+              </div>
+              <span class="break"></span>
+              <div>
+                <span class="label">开始时间</span>
+                <input id="filterStart" type="datetime-local" class="input" style="width:220px;" />
+              </div>
+              <div>
+                <span class="label">结束时间</span>
+                <input id="filterEnd" type="datetime-local" class="input" style="width:220px;" />
+              </div>
+              <button class="btn" onclick="applyFilter()"><i class="fa-solid fa-search"></i> 搜索</button>
+              <button class="btn" onclick="resetFilter()"><i class="fa-solid fa-rotate-left"></i> 重置</button>
+            </div>
+            <div class="right"></div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+              <tr>
+                <th style="width:160px;">事件名称</th>
+                <th style="width:120px;">事件类型</th>
+                <th style="width:160px;">区域</th>
+                <th style="width:140px;">设备</th>
+                <th>地点</th>
+                <th style="width:180px;">时间</th>
+                <th style="width:220px;">置信度</th>
+              </tr>
+            </thead>
+            <tbody id="eventsTbody"></tbody>
+          </table>
+          </div>
+          <div id="eventsEmpty" class="empty" style="display:none;">暂无符合条件的事件</div>
+          <div class="pagination">
+            <button id="prevPage" class="btn">上一页</button>
+            <div id="pageNumbers"></div>
+            <button id="nextPage" class="btn">下一页</button>
+            <span class="page-info" id="pageInfo"></span>
+            <select id="pageSize" class="select" style="width:120px;">
+              <option value="10">每页 10 条</option>
+              <option value="20">每页 20 条</option>
+              <option value="50">每页 50 条</option>
+            </select>
+          </div>
+        </div>
+      </section>
+    </app-layout>
+
+    <script type="module">
+      // 组装所有设备的事件数据（示例）
+      const allEvents = [
+        { id: 'E-1001', type: '抛洒物', location: '隧道A-入口', area: '隧道A', device: 'CAM-01', confidence: 0.86, time: '2025-11-01 09:24:12' },
+        { id: 'E-1002', type: '火灾', location: '隧道A-中段', area: '隧道A', device: 'FIRE-04', confidence: 0.93, time: '2025-11-01 10:02:53' },
+        { id: 'E-1003', type: '塌方', location: '路段B-下行', area: '路段B', device: 'CAM-09', confidence: 0.78, time: '2025-11-01 13:45:07' },
+        { id: 'E-1004', type: '抛洒物', location: '收费站C-南', area: '收费站C', device: 'CAM-12', confidence: 0.64, time: '2025-11-01 16:18:22' },
+        { id: 'E-1005', type: '火灾', location: '隧道D-出口', area: '隧道D', device: 'FIRE-02', confidence: 0.97, time: '2025-11-01 21:06:41' },
+        { id: 'E-1006', type: '抛洒物', location: '路段E-上行', area: '路段E', device: 'CAM-05', confidence: 0.71, time: '2025-11-02 07:12:33' },
+        { id: 'E-1007', type: '塌方', location: '路段E-下行', area: '路段E', device: 'CAM-06', confidence: 0.82, time: '2025-11-02 08:19:48' },
+        { id: 'E-1008', type: '交通事故', location: '服务区G-东侧', area: '服务区G', device: 'CAM-03', confidence: 0.69, time: '2025-11-02 10:27:05' },
+        { id: 'E-1009', type: '火灾', location: '隧道A-入口', area: '隧道A', device: 'FIRE-04', confidence: 0.88, time: '2025-11-02 12:30:29' },
+      ];
+
+      // 为事件流补充演示数据，确保今天/昨天/更早均有数据
+      (function addDemoEventsForGroups() {
+        const pad = (n) => String(n).padStart(2, '0');
+        const buildDate = (daysOffset, h, m, s) => {
+          const now = new Date();
+          const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - daysOffset, h, m, s);
+          return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+        };
+        const push = (id, type, area, location, device, tstr, conf) => allEvents.push({ id, type, area, location, device, confidence: conf, time: tstr });
+        // 今天
+        push('E-T1', '抛洒物', '隧道A', '隧道A-入口', 'CAM-01', buildDate(0, 9, 12, 33), 0.88);
+        push('E-T2', '火灾', '隧道A', '隧道A-中段', 'FIRE-04', buildDate(0, 11, 46, 5), 0.91);
+        // 昨天
+        push('E-Y1', '塌方', '路段E', '路段E-上行', 'CAM-05', buildDate(1, 10, 2, 19), 0.73);
+        push('E-Y2', '抛洒物', '路段E', '路段E-下行', 'CAM-06', buildDate(1, 16, 27, 48), 0.79);
+        // 更早
+        push('E-E1', '火灾', '服务区G', '服务区G-东侧', 'CAM-03', buildDate(3, 8, 15, 54), 0.92);
+        push('E-E2', '交通事故', '隧道D', '隧道D-出口', 'FIRE-02', buildDate(3, 19, 3, 11), 0.67);
+      })();
+
+      // 工具函数
+      const parseTime = (str) => {
+        // 'YYYY-MM-DD HH:mm:ss' -> Date
+        return new Date(str.replace(' ', 'T'));
+      };
+      const isSameDate = (a, b) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+      const daysAgo = (d) => {
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const that = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+        return Math.round((today - that) / (24 * 3600 * 1000));
+      };
+
+      // 构建下拉选项（区域、设备）
+      const areas = Array.from(new Set(allEvents.map(e => e.area))).sort();
+      const devices = Array.from(new Set(allEvents.map(e => e.device))).sort();
+      const areaSel = document.getElementById('filterArea');
+      const deviceSel = document.getElementById('filterDevice');
+      areaSel.innerHTML = `<option value="">区域（全部）</option>` + areas.map(a => `<option value="${a}">${a}</option>`).join('');
+      deviceSel.innerHTML = `<option value="">设备（全部）</option>` + devices.map(d => `<option value="${d}">${d}</option>`).join('');
+
+      // 过滤状态
+      const state = { type: '', area: '', device: '', start: '', end: '', page: 1, pageSize: 10 };
+      const els = {
+        tbody: document.getElementById('eventsTbody'),
+        empty: document.getElementById('eventsEmpty'),
+        type: document.getElementById('filterType'),
+        area: areaSel,
+        device: deviceSel,
+        start: document.getElementById('filterStart'),
+        end: document.getElementById('filterEnd'),
+        prev: document.getElementById('prevPage'),
+        next: document.getElementById('nextPage'),
+        pageNumbers: document.getElementById('pageNumbers'),
+        pageInfo: document.getElementById('pageInfo'),
+        pageSize: document.getElementById('pageSize')
+      };
+
+      // 渲染（表格 + 分页）
+      function render() {
+        // 过滤
+        let rows = allEvents.slice();
+        if (state.type) rows = rows.filter(r => r.type === state.type);
+        if (state.area) rows = rows.filter(r => r.area === state.area);
+        if (state.device) rows = rows.filter(r => r.device === state.device);
+        if (state.start) rows = rows.filter(r => parseTime(r.time) >= new Date(state.start));
+        if (state.end) rows = rows.filter(r => parseTime(r.time) <= new Date(state.end));
+        rows.sort((a, b) => parseTime(b.time) - parseTime(a.time));
+        // 分页信息
+        const total = rows.length;
+        const totalPages = Math.max(1, Math.ceil(total / state.pageSize));
+        if (state.page > totalPages) state.page = totalPages;
+        const startIdx = (state.page - 1) * state.pageSize;
+        const pageRows = rows.slice(startIdx, startIdx + state.pageSize);
+
+        // 渲染表格
+        els.tbody.innerHTML = '';
+        const pad = (n) => String(n).padStart(2,'0');
+        const ts = (t) => { const d = parseTime(t); return `${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`; };
+        for (const e of pageRows) {
+          const tr = document.createElement('tr');
+          const pct = Math.round(e.confidence * 100);
+          const color = pct >= 85 ? '#ff4d4f' : (pct >= 70 ? '#faad14' : '#52c41a');
+          const name = `${e.type}-${e.device}-${ts(e.time)}`;
+          tr.innerHTML = `
+            <td>${name}</td>
+            <td>${e.type}</td>
+            <td>${e.area}</td>
+            <td>${e.device}</td>
+            <td class="cell-muted">${e.location}</td>
+            <td>${e.time}</td>
+            <td>
+              <span class="confidence-bar"><span class="confidence-fill" style="width:${pct}%; background:${color}"></span></span>
+              <span style="color:${color}">${pct}%</span>
+            </td>
+          `;
+          els.tbody.appendChild(tr);
+        }
+
+        els.empty.style.display = total ? 'none' : 'block';
+        els.pageInfo.textContent = `第 ${state.page} / ${totalPages} 页，共 ${total} 条`;
+        els.prev.disabled = state.page <= 1;
+        els.next.disabled = state.page >= totalPages;
+
+        // 渲染页码数字按钮（与系统页面风格一致）
+        if (els.pageNumbers) {
+          els.pageNumbers.innerHTML = '';
+          for (let i = 1; i <= totalPages; i++) {
+            const btn = document.createElement('button');
+            btn.className = 'btn' + (i === state.page ? ' btn-primary' : '');
+            btn.textContent = String(i);
+            btn.onclick = () => { state.page = i; render(); };
+            els.pageNumbers.appendChild(btn);
+          }
+        }
+      }
+
+      // 事件绑定
+      els.type.addEventListener('change', (e) => { state.type = e.target.value; render(); });
+      els.area.addEventListener('change', (e) => { state.area = e.target.value; render(); });
+      els.device.addEventListener('change', (e) => { state.device = e.target.value; render(); });
+      els.start.addEventListener('change', (e) => { state.start = e.target.value; render(); });
+      els.end.addEventListener('change', (e) => { state.end = e.target.value; render(); });
+      // 与其他页面一致：提供显式“搜索/重置”按钮逻辑
+      window.applyFilter = function() {
+        state.type = els.type.value || '';
+        state.area = els.area.value || '';
+        state.device = els.device.value || '';
+        state.start = els.start.value || '';
+        state.end = els.end.value || '';
+        state.page = 1;
+        render();
+      };
+      window.resetFilter = function() {
+        state.type = state.area = state.device = state.start = state.end = '';
+        state.page = 1;
+        els.type.value = '';
+        els.area.value = '';
+        els.device.value = '';
+        els.start.value = '';
+        els.end.value = '';
+        render();
+      };
+
+      els.prev.addEventListener('click', () => { if (state.page > 1) { state.page--; render(); } });
+      els.next.addEventListener('click', () => { state.page++; render(); });
+      els.pageSize.addEventListener('change', (e) => { state.pageSize = Number(e.target.value || 10); state.page = 1; render(); });
+
+      render();
+    </script>
+  </body>
+</html>

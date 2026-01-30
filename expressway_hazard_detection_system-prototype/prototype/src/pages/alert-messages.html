@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>危险告警 · 告警消息</title>
+  <link rel="icon" href="../assets/logo-hrecs-radar.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <script src="../components/app-layout.js"></script>
+  <style>
+    :root { --blue-6:#2F54EB; --bg-body:#f6f8fc; --bg-card:#fff; --border:#e5e7eb; --shadow:0 10px 30px rgba(37,99,235,.12); }
+    html, body { height:100%; } body { margin:0; background:var(--bg-body); font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,'Noto Sans','PingFang SC','Microsoft YaHei',sans-serif; }
+    .card { background:var(--bg-card); border:1px solid var(--border); border-radius:16px; box-shadow:var(--shadow); height:100%; display:flex; flex-direction:column; }
+    .toolbar { display:flex; align-items:center; justify-content:space-between; padding:16px; border-bottom:1px solid var(--border); }
+    .toolbar .left { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+    .toolbar .right { display:flex; align-items:center; gap:12px; }
+    /* 搜索栏标签样式 */
+    .field-label { height:32px; display:flex; align-items:center; color:#64748b; font-size:14px; }
+    /* Segmented view switch (button group) */
+    .segmented { display:inline-flex; align-items:center; border:1px solid #d9d9d9; border-radius:18px; overflow:hidden; background:#fff; box-shadow:0 1px 0 rgba(0,0,0,.02); }
+    .seg-btn { height:36px; width:44px; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; color:#334155; background:#fff; border:none; outline:none; }
+    .seg-btn + .seg-btn { border-left:1px solid #e5e7eb; }
+    .seg-btn.active { background:var(--blue-6); color:#fff; }
+    .seg-btn:hover { background:#f5f8ff; }
+    .select, .input { height:32px; line-height:32px; border-radius:6px; padding:4px 11px; border:1px solid #d9d9d9; background:#fff; font-size:14px; box-sizing:border-box; }
+    .btn { height:32px; padding:0 15px; border-radius:6px; border:1px solid #d9d9d9; background:#fff; cursor:pointer; }
+    .btn-primary { background:var(--blue-6); border-color:var(--blue-6); color:#fff; }
+
+    .cards-wrap { padding:16px; display:grid; grid-template-columns:repeat(3, 1fr); gap:16px; overflow:auto; }
+    @media (max-width: 1200px) { .cards-wrap { grid-template-columns:repeat(2, 1fr); } }
+    @media (max-width: 768px) { .cards-wrap { grid-template-columns:repeat(1, 1fr); } }
+    .alert-card { border:1px solid #e5e7eb; border-radius:12px; padding:14px; background:#fff; display:flex; flex-direction:column; gap:10px; cursor:pointer; }
+    .alert-header { display:flex; align-items:center; justify-content:space-between; }
+    .alert-title { font-weight:600; color:#1f2937; display:flex; align-items:center; gap:8px; }
+    .level-badge { display:inline-block; padding:2px 8px; border-radius:12px; font-size:12px; font-weight:500; }
+    .level-badge.低级 { background:#f6ffed; color:#52c41a; border:1px solid #b7eb8f; }
+    .level-badge.中级 { background:#fff7e6; color:#fa8c16; border:1px solid #ffd591; }
+    .level-badge.高级 { background:#fff2e8; color:#fa541c; border:1px solid #ffbb96; }
+    .level-badge.紧急 { background:#fff1f0; color:#f5222d; border:1px solid #ffa39e; }
+    .status { font-size:12px; padding:2px 8px; border-radius:12px; }
+    .status.open { background:#fff7f0; color:#fa8c16; border:1px solid #ffd591; }
+    .status.processing { background:#e6f4ff; color:#1677ff; border:1px solid #91caff; }
+    .status.closed { background:#f6ffed; color:#52c41a; border:1px solid #b7eb8f; }
+    .alert-body { display:grid; grid-template-columns: 1fr; gap:8px; font-size:13px; color:#374151; }
+    .kv { display:flex; align-items:center; gap:6px; }
+    .kv .k { color:#6b7280; width:120px; flex:0 0 120px; }
+    .kv .v { flex:1; }
+    .alert-actions { display:flex; align-items:center; gap:8px; }
+    /* 仅卡片视图中将操作按钮右对齐 */
+    .alert-card .alert-actions { justify-content:flex-end; }
+    .icon-btn { width:32px; height:32px; display:inline-flex; align-items:center; justify-content:center; border:1px solid #d9d9d9; border-radius:6px; background:#fff; color:#333; cursor:pointer; position:relative; }
+    .icon-btn:hover { background:#f0f5ff; color:var(--blue-6); border-color:#adc6ff; }
+    .pagination { padding:12px 16px; display:flex; align-items:center; justify-content:center; gap:8px; border-top:1px solid var(--border); }
+    .toolbar-secondary { padding:10px 16px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:12px; }
+    /* 视图容器统一尺寸与滚动策略 */
+    #viewCards, #viewTable, #viewTimeline { flex:1; min-height:0; height:0; overflow:auto; }
+
+    /* 表格视图样式 */
+    .table-wrap { padding:16px; overflow:auto; }
+    table.table { width:100%; border-collapse:collapse; background:#fff; border:1px solid #e5e7eb; border-radius:12px; }
+    table.table th, table.table td { padding:10px 12px; border-bottom:1px solid #eef2f7; font-size:13px; color:#374151; text-align:left; }
+    table.table th { background:#f7f9fc; color:#475569; font-weight:600; }
+    table.table tr:last-child td { border-bottom:none; }
+    .op-cell button { margin-right:6px; }
+
+    /* 时间轴视图样式 */
+    .timeline-wrap { padding:16px; display:flex; flex-direction:column; gap:12px; }
+    .tl-day { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:10px 12px; }
+    .tl-day-title { font-weight:600; color:#334155; margin-bottom:8px; }
+    .tl-item { display:flex; gap:12px; padding:8px 0; border-top:1px dashed #eee; }
+    .tl-item:first-child { border-top:none; }
+    .tl-time { width:120px; color:#64748b; }
+    .tl-content { flex:1; }
+
+    /* 看板视图样式 */
+    .kanban-wrap { padding:16px; display:grid; grid-template-columns:repeat(3, 1fr); gap:16px; }
+    .kanban-col { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:12px; display:flex; flex-direction:column; gap:8px; }
+    .kanban-col .col-title { font-weight:600; color:#334155; margin-bottom:4px; }
+    .kanban-item { border:1px solid #eef2f7; border-radius:8px; padding:8px; background:#fafafa; }
+
+    /* 模态弹窗样式 */
+    .modal-backdrop { position:fixed; inset:0; background:rgba(0,0,0,.45); display:none; align-items:center; justify-content:center; z-index:999; }
+    .modal { width:440px; max-width:90vw; background:#fff; border:1px solid var(--border); border-radius:12px; box-shadow:var(--shadow); overflow:hidden; }
+    .modal-header { padding:12px 16px; font-weight:600; color:#334155; border-bottom:1px solid var(--border); }
+    .modal-body { padding:16px; color:#374151; }
+    .modal-footer { padding:12px 16px; border-top:1px solid var(--border); display:flex; align-items:center; justify-content:flex-end; gap:8px; }
+    .modal .input, .modal .select, .modal textarea { width:100%; box-sizing:border-box; }
+    .modal textarea { min-height:96px; resize:vertical; border:1px solid #d9d9d9; border-radius:6px; padding:8px 11px; font-size:14px; }
+    .tl-item { cursor:pointer; }
+  </style>
+</head>
+<body>
+  <app-layout active="alert-messages" breadcrumb="危险告警 / 告警消息">
+    <section slot="content" class="content">
+      <div class="card">
+        <div class="toolbar">
+          <div class="left">
+            <label for="q" class="field-label" title="搜索关键词">关键词</label>
+            <input id="q" class="input" placeholder="搜索名称/地点/设备/规则" />
+            <label for="f_type" class="field-label" title="告警类型">类型</label>
+            <select id="f_type" class="select">
+              <option value="">全部类型</option>
+              <option value="抛洒物">抛洒物</option>
+              <option value="塌方">塌方</option>
+              <option value="火灾">火灾</option>
+              <option value="交通事故">交通事故</option>
+            </select>
+            <label for="f_level" class="field-label" title="告警等级">等级</label>
+            <select id="f_level" class="select">
+              <option value="">全部等级</option>
+              <option value="低级">低级</option>
+              <option value="中级">中级</option>
+              <option value="高级">高级</option>
+              <option value="紧急">紧急</option>
+            </select>
+            <label for="f_status" class="field-label" title="告警状态">状态</label>
+            <select id="f_status" class="select">
+              <option value="">全部状态</option>
+              <option value="open">开启</option>
+              <option value="processing">处理中</option>
+              <option value="closed">已关闭</option>
+            </select>
+            <label for="f_time" class="field-label" title="时间范围">时间范围</label>
+            <select id="f_time" class="select">
+              <option value="all">全部时间</option>
+              <option value="24h">近24小时</option>
+              <option value="7d">近7天</option>
+              <option value="30d">近30天</option>
+            </select>
+          </div>
+          <div class="right">
+            <button id="btnExport" class="btn"><i class="fa-solid fa-upload"></i> 导出JSON</button>
+            <button id="btnRefresh" class="btn"><i class="fa-solid fa-arrows-rotate"></i> 刷新</button>
+          </div>
+        </div>
+        <!-- 视图切换：按钮组，下移至工具栏下方，左对齐 -->
+        <div class="toolbar-secondary">
+          <div class="segmented" role="tablist" aria-label="视图切换">
+            <button class="seg-btn active" data-view="cards" role="tab" aria-selected="true" title="卡片视图"><i class="fa-solid fa-grip"></i></button>
+            <button class="seg-btn" data-view="table" role="tab" aria-selected="false" title="表格视图"><i class="fa-solid fa-table"></i></button>
+            <button class="seg-btn" data-view="timeline" role="tab" aria-selected="false" title="时间轴视图"><i class="fa-solid fa-clock"></i></button>
+          </div>
+        </div>
+        <div id="viewCards" class="view">
+          <div class="cards-wrap" id="cardsWrap"></div>
+        </div>
+
+        <div id="viewTable" class="view" style="display:none;">
+          <div class="table-wrap">
+            <table class="table" id="tableWrap"></table>
+          </div>
+        </div>
+
+        <div id="viewTimeline" class="view" style="display:none;">
+          <div class="timeline-wrap" id="timelineWrap"></div>
+        </div>
+
+        <div id="viewKanban" class="view" style="display:none;">
+          <div class="kanban-wrap" id="kanbanWrap"></div>
+        </div>
+
+        <!-- 统一分页组件（各视图共用） -->
+        <div class="pagination" id="paginationUnified" style="display:flex;">
+          <button id="prevPage" class="btn">上一页</button>
+          <div id="pageNumbers" style="display:flex;gap:8px"></div>
+          <button id="nextPage" class="btn">下一页</button>
+        </div>
+
+        <!-- 二次确认弹窗：确认生成应急事件 -->
+        <div id="confirmModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+          <div class="modal">
+            <div class="modal-header" id="confirmTitle"><i class="fa-solid fa-triangle-exclamation" style="color:#fa8c16;margin-right:8px"></i>确认操作</div>
+            <div class="modal-body">确认生成应急事件吗？</div>
+            <div class="modal-footer">
+              <button id="btnConfirmCancel" class="btn">取消</button>
+              <button id="btnConfirmOk" class="btn btn-primary">确认</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 关闭弹窗：填写处理结果信息 -->
+        <div id="closeModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="closeTitle">
+          <div class="modal">
+            <div class="modal-header" id="closeTitle"><i class="fa-solid fa-clipboard" style="color:#334155;margin-right:8px"></i>填写处理结果</div>
+            <div class="modal-body">
+              <div style="display:grid;grid-template-columns:1fr;gap:10px">
+                <div>
+                  <label for="closeReason" class="field-label">关闭原因</label>
+                  <select id="closeReason" class="select">
+                    <option value="误报">误报</option>
+                    <option value="已修复" selected>已修复</option>
+                    <option value="不需处理">不需处理</option>
+                    <option value="其他">其他</option>
+                  </select>
+                </div>
+                <div>
+                  <label for="closeNote" class="field-label">处理结果/备注</label>
+                  <textarea id="closeNote" placeholder="请输入处理结果或补充说明（可选）"></textarea>
+                </div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button id="btnCloseCancel" class="btn">取消</button>
+              <button id="btnCloseOk" class="btn btn-primary">保存并关闭</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </app-layout>
+
+  <script>
+    const levelMap = { L1:'低级', L2:'中级', L3:'高级', L4:'紧急', L5:'紧急', '低级':'低级', '中级':'中级', '高级':'高级', '紧急':'紧急' };
+    const hazardTypes = ['抛洒物','塌方','火灾','交通事故'];
+    const storeKey = 'alert_messages_v1';
+    let messages = JSON.parse(localStorage.getItem(storeKey) || '[]');
+    let current = { page:1, pageSize:9, filtered:[...messages], view:'cards' };
+
+    function seedDemo() {
+      if (messages.length) return;
+      const now = Date.now();
+      const mk = (i, level, type, status) => ({
+        id: 'alert-' + (1000 + i),
+        name: `${type}告警-${level}-${i}`,
+        level,
+        category: type,
+        device: 'CAM-0' + ((i%8)+1),
+        location: ['隧道A-中段','匝道C-进口','桥梁D-北侧','主线E-K12'][i%4],
+        ruleId: 'rule-' + (2000 + i),
+        status,
+        occurredAt: new Date(now - i*60*60*1000).toISOString(),
+        ackBy: status !== 'open' ? 'dispatcher-01' : null,
+        ackAt: status !== 'open' ? new Date(now - i*60*60*1000 + 2*60*1000).toISOString() : null,
+        handledBy: status === 'closed' ? 'emergency-team-01' : null,
+        handledAt: status === 'closed' ? new Date(now - i*60*60*1000 + 20*60*1000).toISOString() : null,
+        closedAt: status === 'closed' ? new Date(now - i*60*60*1000 + 60*60*1000).toISOString() : null,
+        closeReason: status === 'closed' ? { type:'已修复', note:'现场处置完成' } : null,
+        result: status === 'closed' ? '完成复核后恢复通行' : ''
+      });
+      messages = [
+        mk(1,'低级','抛洒物','open'),
+        mk(2,'中级','塌方','processing'),
+        mk(3,'高级','火灾','closed'),
+        mk(4,'紧急','交通事故','open'),
+        mk(5,'高级','抛洒物','processing'),
+        mk(6,'中级','火灾','closed'),
+        mk(7,'低级','塌方','open'),
+        mk(8,'紧急','火灾','processing'),
+        mk(9,'中级','交通事故','closed'),
+        mk(10,'高级','抛洒物','open'),
+        mk(11,'低级','交通事故','processing'),
+        mk(12,'紧急','塌方','closed')
+      ];
+      localStorage.setItem(storeKey, JSON.stringify(messages));
+    }
+
+    function applyFilter() {
+      const q = document.getElementById('q').value.trim();
+      const type = document.getElementById('f_type').value;
+      const level = document.getElementById('f_level').value;
+      const status = document.getElementById('f_status').value;
+      const time = document.getElementById('f_time').value;
+      let data = [...messages];
+      if (q) data = data.filter(x => [x.name, x.location, x.device, x.ruleId].some(v => String(v||'').includes(q)));
+      if (type) data = data.filter(x => x.category === type);
+      if (level) data = data.filter(x => (levelMap[x.level] || x.level) === level);
+      if (status) data = data.filter(x => x.status === status);
+      if (time && time !== 'all') {
+        const now = Date.now();
+        const span = time==='24h'?24*60*60*1000 : time==='7d'?7*24*60*60*1000 : 30*24*60*60*1000;
+        data = data.filter(x => now - new Date(x.occurredAt).getTime() <= span);
+      }
+      current.filtered = data; current.page = 1; renderView();
+    }
+
+    function renderView() {
+      updateViewDisplay();
+      if (current.view === 'cards') renderCards();
+      else if (current.view === 'table') renderTable();
+      else if (current.view === 'timeline') renderTimeline();
+      else if (current.view === 'kanban') renderKanban();
+    }
+
+    function updateViewDisplay() {
+      const map = {
+        cards: document.getElementById('viewCards'),
+        table: document.getElementById('viewTable'),
+        timeline: document.getElementById('viewTimeline'),
+        kanban: document.getElementById('viewKanban')
+      };
+      Object.entries(map).forEach(([key, el]) => { if (!el) return; el.style.display = (key===current.view)?'block':'none'; });
+      document.querySelectorAll('.seg-btn').forEach(btn => {
+        const active = btn.dataset.view === current.view; btn.classList.toggle('active', active);
+        btn.setAttribute('aria-selected', active ? 'true' : 'false');
+      });
+      // 统一分页只在卡片/表格视图显示
+      const pag = document.getElementById('paginationUnified');
+      if (pag) pag.style.display = (current.view==='cards' || current.view==='table') ? 'flex' : 'none';
+    }
+
+    function renderCards() {
+      const start = (current.page-1)*current.pageSize, end = start + current.pageSize;
+      const pageData = current.filtered.slice(start, end);
+      const wrap = document.getElementById('cardsWrap'); wrap.innerHTML = '';
+      pageData.forEach(m => {
+        const div = document.createElement('div'); div.className = 'alert-card';
+        div.addEventListener('click', () => gotoDetail(m.id));
+        div.innerHTML = `
+          <div class="alert-header">
+            <div class="alert-title"><i class="fa-solid fa-bell"></i><span>${m.name}</span></div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <span class="level-badge ${levelMap[m.level]||m.level}">${levelMap[m.level]||m.level}</span>
+            </div>
+          </div>
+          <div class="alert-body">
+            <div class="kv"><div class="k">危害类型</div><div class="v">${m.category}</div></div>
+            <div class="kv"><div class="k">发生时间</div><div class="v">${new Date(m.occurredAt).toLocaleString()}</div></div>
+            <div class="kv"><div class="k">发生设备</div><div class="v">${m.device}</div></div>
+            <div class="kv"><div class="k">地点</div><div class="v">${m.location}</div></div>
+            <div class="kv"><div class="k">状态</div><div class="v"><span class="status ${m.status}">${m.status==='open'?'开启':m.status==='processing'?'处理中':'已关闭'}</span></div></div>
+            <div class="kv"><div class="k">处理结果</div><div class="v">${m.result||'-'}</div></div>
+          </div>
+          <div class="alert-actions">
+            ${m.status==='open'?`<button class="btn btn-primary" onclick="confirmAlert('${m.id}', event)">确认</button>`:''}
+            ${m.status!=='closed'?`<button class="btn" onclick="closeAlert('${m.id}', event)">关闭</button>`:''}
+          </div>
+        `;
+        wrap.appendChild(div);
+      });
+      renderPagination();
+    }
+
+    function renderPagination() {
+      const total = current.filtered.length, totalPages = Math.max(1, Math.ceil(total/current.pageSize));
+      const pageNumbers = document.getElementById('pageNumbers'); pageNumbers.innerHTML = '';
+      const renderCurrent = () => { if (current.view==='table') renderTable(); else renderCards(); };
+      for (let i=1;i<=totalPages;i++) {
+        const btn = document.createElement('button'); btn.className = 'btn'; btn.textContent = i;
+        if (i === current.page) { btn.style.background='var(--blue-6)'; btn.style.color='#fff'; btn.style.borderColor='var(--blue-6)'; }
+        btn.addEventListener('click', () => { current.page = i; renderCurrent(); });
+        pageNumbers.appendChild(btn);
+      }
+      document.getElementById('prevPage').onclick = () => { if (current.page>1) { current.page--; renderCurrent(); } };
+      document.getElementById('nextPage').onclick = () => { const tp = Math.max(1, Math.ceil(total/current.pageSize)); if (current.page<tp) { current.page++; renderCurrent(); } };
+    }
+
+    function renderTable() {
+      const start = (current.page-1)*current.pageSize, end = start + current.pageSize;
+      const pageData = current.filtered.slice(start, end);
+      const tbl = document.getElementById('tableWrap');
+      tbl.innerHTML = `
+        <thead>
+          <tr>
+            <th>告警名称</th>
+            <th>告警等级</th>
+            <th>危害类型</th>
+            <th>发生设备</th>
+            <th>地点</th>
+            <th>发生时间</th>
+            <th>状态</th>
+            <th>处理结果</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      `;
+      const tbody = tbl.querySelector('tbody');
+      pageData.forEach(m => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${m.name}</td>
+          <td><span class="level-badge ${levelMap[m.level]||m.level}">${levelMap[m.level]||m.level}</span></td>
+          <td>${m.category}</td>
+          <td>${m.device}</td>
+          <td>${m.location}</td>
+          <td>${new Date(m.occurredAt).toLocaleString()}</td>
+          <td>${m.status==='open'?'开启':m.status==='processing'?'处理中':'已关闭'}</td>
+          <td>${m.result||'-'}</td>
+          <td class="op-cell">
+            <button class="icon-btn" title="详情" aria-label="详情" onclick="gotoDetail('${m.id}')"><i class="fa-solid fa-eye"></i></button>
+            ${m.status==='open'?`<button class="icon-btn" title="确认生成应急事件" aria-label="确认生成应急事件" onclick="confirmAlert('${m.id}', event)"><i class="fa-solid fa-clipboard-check"></i></button>`:''}
+            ${m.status!=='closed'?`<button class="icon-btn" title="关闭并填写结果" aria-label="关闭并填写结果" onclick="closeAlert('${m.id}', event)"><i class="fa-solid fa-circle-xmark"></i></button>`:''}
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+      renderPagination();
+    }
+
+    /* renderTablePagination removed: unified pagination component is used for all paged views */
+
+    function renderTimeline() {
+      const wrap = document.getElementById('timelineWrap'); wrap.innerHTML = '';
+      const groups = {};
+      current.filtered.forEach(m => {
+        const d = new Date(m.occurredAt);
+        const key = d.getFullYear()+ '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+        (groups[key] ||= []).push(m);
+      });
+      Object.keys(groups).sort((a,b)=> new Date(b)-new Date(a)).forEach(day => {
+        const dayBox = document.createElement('div'); dayBox.className = 'tl-day';
+        dayBox.innerHTML = `<div class="tl-day-title">${day}</div>`;
+        groups[day].sort((a,b)=> new Date(b.occurredAt) - new Date(a.occurredAt)).forEach(m => {
+          const item = document.createElement('div'); item.className = 'tl-item';
+          item.addEventListener('click', () => gotoDetail(m.id));
+          item.innerHTML = `
+            <div class="tl-time">${new Date(m.occurredAt).toLocaleTimeString()}</div>
+            <div class="tl-content">
+              <div style="font-weight:600;color:#1f2937;display:flex;align-items:center;gap:8px">
+                <i class="fa-solid fa-bell"></i><span>${m.name}</span>
+                <span class="level-badge ${levelMap[m.level]||m.level}">${levelMap[m.level]||m.level}</span>
+                <span class="status ${m.status}">${m.status==='open'?'开启':m.status==='processing'?'处理中':'已关闭'}</span>
+              </div>
+              <div style="margin-top:4px;color:#475569;">类型：${m.category} · 设备：${m.device} · 地点：${m.location}</div>
+              <div class="alert-actions" style="margin-top:6px;">
+                ${m.status==='open'?`<button class="btn btn-primary" onclick="confirmAlert('${m.id}', event)">确认</button>`:''}
+                ${m.status!=='closed'?`<button class="btn" onclick="closeAlert('${m.id}', event)">关闭</button>`:''}
+              </div>
+            </div>
+          `;
+          dayBox.appendChild(item);
+        });
+        wrap.appendChild(dayBox);
+      });
+    }
+
+    function renderKanban() {
+      const wrap = document.getElementById('kanbanWrap'); wrap.innerHTML = '';
+      const lanes = [
+        { key:'open', title:'开启' },
+        { key:'processing', title:'处理中' },
+        { key:'closed', title:'已关闭' }
+      ];
+      lanes.forEach(l => {
+        const col = document.createElement('div'); col.className = 'kanban-col';
+        col.innerHTML = `<div class="col-title">${l.title}</div>`;
+        current.filtered.filter(x => x.status===l.key).forEach(m => {
+          const item = document.createElement('div'); item.className = 'kanban-item';
+          item.innerHTML = `
+            <div style="display:flex;align-items:center;gap:8px;justify-content:space-between;">
+              <div style="font-weight:600;color:#1f2937;display:flex;align-items:center;gap:8px"><i class="fa-solid fa-bell"></i><span>${m.name}</span></div>
+              <span class="level-badge ${levelMap[m.level]||m.level}">${levelMap[m.level]||m.level}</span>
+            </div>
+            <div style="margin-top:6px;color:#475569;">类型：${m.category} · 设备：${m.device}</div>
+            <div style="margin-top:4px;color:#64748b;">地点：${m.location} · 时间：${new Date(m.occurredAt).toLocaleString()}</div>
+            <div class="alert-actions" style="margin-top:6px;">
+              <button class="btn" onclick="gotoDetail('${m.id}')">详情</button>
+              ${m.status==='open'?`<button class="btn btn-primary" onclick="confirmAlert('${m.id}', event)">确认</button>`:''}
+              ${m.status!=='closed'?`<button class="btn" onclick="closeAlert('${m.id}', event)">关闭</button>`:''}
+            </div>
+          `;
+          col.appendChild(item);
+        });
+        wrap.appendChild(col);
+      });
+    }
+
+    function saveStore() { localStorage.setItem(storeKey, JSON.stringify(messages)); }
+
+    // 弹窗状态缓存
+    const modalState = { targetId: null };
+
+    function showConfirmModal(id) {
+      modalState.targetId = id;
+      document.getElementById('confirmModal').style.display = 'flex';
+    }
+
+    function hideConfirmModal() {
+      document.getElementById('confirmModal').style.display = 'none';
+      modalState.targetId = null;
+    }
+
+    function confirmAlert(id, e) {
+      if (e) e.stopPropagation();
+      showConfirmModal(id);
+    }
+
+    function proceedConfirm() {
+      const id = modalState.targetId; if (!id) return;
+      const idx = messages.findIndex(x => x.id === id); if (idx<0) return;
+      messages[idx].status = 'processing';
+      messages[idx].ackBy = 'dispatcher-01';
+      messages[idx].ackAt = new Date().toISOString();
+      hideConfirmModal();
+      saveStore(); applyFilter();
+    }
+
+    function showCloseModal(id) {
+      modalState.targetId = id;
+      // 默认值
+      const reasonEl = document.getElementById('closeReason');
+      const noteEl = document.getElementById('closeNote');
+      if (reasonEl) reasonEl.value = '已修复';
+      if (noteEl) noteEl.value = '';
+      document.getElementById('closeModal').style.display = 'flex';
+    }
+
+    function hideCloseModal() {
+      document.getElementById('closeModal').style.display = 'none';
+      modalState.targetId = null;
+    }
+
+    function closeAlert(id, e) {
+      if (e) e.stopPropagation();
+      showCloseModal(id);
+    }
+
+    function proceedClose() {
+      const id = modalState.targetId; if (!id) return;
+      const idx = messages.findIndex(x => x.id === id); if (idx<0) return;
+      const reasonEl = document.getElementById('closeReason');
+      const noteEl = document.getElementById('closeNote');
+      const reason = reasonEl ? reasonEl.value : '其他';
+      const note = noteEl ? noteEl.value.trim() : '';
+      messages[idx].status = 'closed';
+      messages[idx].closedAt = new Date().toISOString();
+      messages[idx].closeReason = { type: reason, note };
+      // 若无既有处理结果，使用备注或占位符
+      messages[idx].result = messages[idx].result || (note ? note : '—');
+      hideCloseModal();
+      saveStore(); applyFilter();
+    }
+
+    function gotoDetail(id) { window.location.href = `alert-detail.html?id=${encodeURIComponent(id)}`; }
+
+    function exportJson() {
+      const blob = new Blob([JSON.stringify(messages, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob); const a = document.createElement('a');
+      a.href = url; a.download = 'alert_messages.json'; a.click(); URL.revokeObjectURL(url);
+    }
+
+    function bindEvents() {
+      document.getElementById('q').addEventListener('input', applyFilter);
+      document.getElementById('f_type').addEventListener('change', applyFilter);
+      document.getElementById('f_level').addEventListener('change', applyFilter);
+      document.getElementById('f_status').addEventListener('change', applyFilter);
+      document.getElementById('f_time').addEventListener('change', applyFilter);
+      document.getElementById('btnExport').addEventListener('click', exportJson);
+      document.getElementById('btnRefresh').addEventListener('click', () => { messages = JSON.parse(localStorage.getItem(storeKey) || '[]'); applyFilter(); });
+      document.querySelectorAll('.seg-btn').forEach(btn => btn.addEventListener('click', () => { current.page = 1; current.view = btn.dataset.view; renderView(); }));
+      // 弹窗按钮事件
+      document.getElementById('btnConfirmCancel').addEventListener('click', hideConfirmModal);
+      document.getElementById('btnConfirmOk').addEventListener('click', proceedConfirm);
+      document.getElementById('btnCloseCancel').addEventListener('click', hideCloseModal);
+      document.getElementById('btnCloseOk').addEventListener('click', proceedClose);
+    }
+
+    function init() { seedDemo(); bindEvents(); applyFilter(); }
+    document.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>

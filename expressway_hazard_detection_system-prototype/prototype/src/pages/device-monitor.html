@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>危险检测 · 设备监控</title>
+  <link rel="icon" href="../assets/logo-hrecs-radar.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <script src="../components/app-layout.js"></script>
+  <style>
+    :root {
+      --blue-6: #2F54EB;
+      --blue-5: #3B6AE8;
+      --blue-4: #5C85F5;
+      --text-strong: #1f2937;
+      --text-muted: rgba(0,0,0,.45);
+      --bg-body: #f6f8fc;
+      --bg-card: #ffffff;
+      --border: #e5e7eb;
+      --radius-lg: 16px;
+      --radius-md: 12px;
+      --shadow: 0 10px 30px rgba(37,99,235,.12);
+    }
+    html, body { height:100%; }
+    body { margin:0; background: var(--bg-body); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', 'PingFang SC', 'Microsoft YaHei', sans-serif; }
+
+    /* 页面内样式（通过 app-layout 的 slot 投影显示） */
+    .content-body { height: 100%; box-sizing: border-box; }
+    .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow); height: 100%; display:flex; flex-direction: column; }
+
+    /* 工具栏与表格 */
+    .toolbar { display:flex; align-items:center; justify-content:space-between; padding: 16px; border-bottom:1px solid var(--border); }
+    .toolbar .left { display:flex; align-items:center; gap:12px; }
+    .toolbar .left > div { display:flex; align-items:center; gap:8px; }
+    .toolbar .select { width: 180px; }
+    .toolbar .right { display:flex; align-items:center; gap:10px; }
+    .input, .select { height: 32px; line-height: 32px; border-radius: 6px; padding: 4px 11px; border: 1px solid #d9d9d9; background: #fff; color: #333; font-size: 14px; box-sizing: border-box; outline: none; transition: border-color .2s ease, box-shadow .2s ease; }
+    .input:focus, .select:focus { border-color: var(--blue-6); box-shadow: 0 0 0 2px rgba(47, 84, 235, 0.2); }
+    .btn { height: 32px; padding: 0 15px; border-radius: 6px; border: 1px solid #d9d9d9; background: #fff; color: #444; cursor: pointer; transition: background-color .2s ease, border-color .2s ease, color .2s ease; }
+    .btn:hover { background: #f5f5f5; }
+    .btn:active { background: #f0f0f0; }
+    .btn-primary { background: var(--blue-6); border-color: var(--blue-6); color: #fff; }
+    .btn-primary:hover { background: var(--blue-5); border-color: var(--blue-5); }
+    .btn-icon { width: 32px; padding: 0; display:inline-flex; align-items:center; justify-content:center; }
+
+    .metrics { display:grid; grid-template-columns: repeat(3, 1fr); gap:12px; padding: 12px 16px; border-bottom:1px solid var(--border); }
+    .metric-item { background:#fafafa; border:1px solid #f0f0f0; border-radius:10px; padding:12px; display:flex; align-items:center; justify-content:space-between; }
+    .metric-title { color:#374151; font-size:14px; }
+    .metric-value { font-weight:700; color: var(--blue-6); }
+
+    .table-wrap { flex: 1; overflow: auto; }
+    .table-wrap table { width: 100%; border-collapse: separate; border-spacing: 0; }
+    .table-wrap thead th { background: #fafafa; font-weight: 500; font-size: 14px; color: rgba(0,0,0,.88); padding: 12px 16px; border-bottom: 1px solid #f0f0f0; text-align: left; }
+    .table-wrap tbody td { padding: 12px 16px; border-bottom: 1px solid #f0f0f0; color: rgba(0,0,0,.88); }
+    .table-wrap tbody tr:hover td { background: #fafafa; }
+    .table-wrap .op-btns { display:flex; align-items:center; gap:8px; }
+
+    .pagination { padding: 12px 16px; display:flex; align-items:center; justify-content:center; gap:8px; }
+    .pagination #pageNumbers { display:flex; align-items:center; gap:8px; }
+
+    /* 弹窗样式 */
+    .modal-overlay { position: fixed; inset:0; background: rgba(0, 0, 0, 0.45); display: none; align-items: center; justify-content: center; z-index: 1000; }
+    .modal-overlay.show { display: flex; }
+    .modal { background: #fff; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); width: 560px; max-width: 90vw; overflow: hidden; }
+    .modal-header { padding: 12px 16px; border-bottom: 1px solid #f0f0f0; display:flex; align-items:center; justify-content:space-between; }
+    .modal-close { width:28px; height:28px; border-radius:50%; border:0; background:transparent; color:#666; display:flex; align-items:center; justify-content:center; cursor:pointer; }
+    .modal-close:hover { background:#f5f5f5; }
+    .modal-close:active { background:#eee; }
+    .modal-body { padding: 16px; }
+    .modal-actions { padding: 12px 16px; border-top: 1px solid #f0f0f0; display:flex; justify-content:flex-end; gap:10px; }
+  </style>
+</head>
+<body>
+  <app-layout active="detection" breadcrumb="首页 / 危险检测 / 设备监控">
+    <div slot="content" class="content-body">
+      <div class="card">
+          <!-- 顶部告警数量已移除 -->
+
+          <!-- 双栏：区域/设备 列表 + 检测视图 -->
+          <style>
+            .detector-wrap { display:grid; grid-template-columns: 320px 1fr; height: 100%; }
+            .left-panel { border-right:1px solid var(--border); padding: 12px; overflow:auto; display:flex; flex-direction:column; gap:12px; }
+            .panel-title { font-weight:600; color: var(--text-strong); margin: 0; }
+            .tree-search { display:flex; align-items:center; gap:8px; }
+            .tree { list-style:none; margin:0; padding:0; }
+            .tree-node { display:flex; align-items:center; justify-content:space-between; padding:8px 10px; border-radius:8px; cursor:pointer; }
+            .tree-node:hover { background:#f5f7ff; }
+            .tree-node.active { background:#e6f0ff; }
+            .tree-children { margin-left:16px; border-left:1px dashed #e5e7eb; padding-left:8px; }
+            .node-left { display:flex; align-items:center; gap:8px; }
+            .node-meta { color: var(--text-muted); font-size:12px; }
+            .caret { color: var(--text-muted); font-size:12px; width:12px; }
+            .status-dot { width:6px; height:6px; border-radius:50%; display:inline-block; }
+            .status-dot.online { background:#22c55e; }
+            .status-dot.offline { background:#9ca3af; }
+            .type-badge { display:inline-flex; align-items:center; gap:4px; padding:2px 6px; border-radius:12px; color:#fff; font-size:12px; }
+            .group-title { position: sticky; top: 0; background: #fff; padding:4px 8px; font-weight:600; color:#374151; border-left:3px solid var(--blue-6); margin-bottom:6px; z-index: 1; }
+            .event-item.latest { background:#fff9e6; border-color:#ffe58f; }
+            .confidence-bar { height:4px; background:#eee; border-radius:4px; margin-top:6px; overflow:hidden; }
+            .confidence-fill { height:100%; border-radius:4px; }
+            mark { background:#fff1b8; color:inherit; border-radius:2px; padding:0 2px; }
+
+            .right-panel { padding: 12px; display:flex; flex-direction:column;min-height: 0; }
+            .tabs { display:flex; align-items:center; gap:8px; border-bottom:1px solid var(--border); padding-bottom:8px; }
+            .tab-btn { height:32px; padding:0 12px; border-radius:6px; border:1px solid #d9d9d9; background:#fff; cursor:pointer; }
+            .tab-btn.active { background: var(--blue-6); border-color: var(--blue-6); color:#fff; }
+            .tab-content { flex:1; overflow:auto; padding: 12px 4px; }
+            .video-box { height: 360px; border:1px solid #f0f0f0; border-radius:10px; background:#000; display:flex; align-items:center; justify-content:center; color:#fff; position:relative; }
+            .video-overlay { position:absolute; bottom:10px; left:10px; background: rgba(0,0,0,.45); padding:6px 10px; border-radius:6px; font-size:12px; }
+            .video-actions { margin-top: 10px; display:flex; gap:8px; }
+            /* 检测标注层样式 */
+            .detect-boxes { position:absolute; inset:0; pointer-events:none; }
+            .detect-box { position:absolute; border:2px solid #22c55e; border-radius:4px; box-shadow:0 0 0 2px rgba(34,197,94,.2); }
+            .detect-box .tag { position:absolute; top:-18px; left:0; background:rgba(34,197,94,.85); color:#fff; font-size:12px; padding:2px 6px; border-radius:4px; }
+
+            .sensor-grid { display:grid; grid-template-columns: repeat(3, 1fr); gap:12px; }
+            .sensor-card { background:#fafafa; border:1px solid #f0f0f0; border-radius:10px; padding:12px; }
+            .sensor-title { color:#374151; font-size:14px; }
+            .sensor-value { font-weight:700; color: var(--blue-6); font-size:20px; }
+            .filter-row { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+            .event-list { display:flex; flex-direction:column; gap:8px; height: calc(100% - 40px); overflow-y: auto; padding-right: 4px; }
+            .event-list::-webkit-scrollbar { width:8px; }
+            .event-list::-webkit-scrollbar-thumb { background: #d9d9d9; border-radius: 8px; }
+            .event-list::-webkit-scrollbar-track { background: transparent; }
+            .event-item { border:1px solid #f0f0f0; border-radius:10px; padding:10px; background:#fff; }
+            .event-meta { display:flex; align-items:center; gap:12px; color: var(--text-muted); font-size:12px; margin-top:4px; }
+
+            .device-info { display:grid; grid-template-columns: 140px 1fr; gap:8px; }
+            .device-actions { margin-top:12px; display:flex; gap:8px; }
+          </style>
+
+          <div class="detector-wrap">
+            <!-- 左侧：区域→设备 树 + 搜索/过滤 -->
+            <div class="left-panel">
+              <div class="tree-search">
+                <input id="treeSearch" class="input" placeholder="搜索区域/设备" style="flex:1;" />
+                <button id="treeToggleAll" class="btn" title="展开全部">展开全部</button>
+              </div>
+              <ul id="deviceTree" class="tree"></ul>
+            </div>
+
+            <!-- 右侧：检测视图页签 -->
+            <div class="right-panel">
+              <div class="tabs">
+                <button class="tab-btn active" data-tab="video">视频预览</button>
+                <button class="tab-btn" data-tab="sensor">传感数据</button>
+                <button class="tab-btn" data-tab="events">检测事件流</button>
+                <button class="tab-btn" data-tab="device">设备信息与控制</button>
+              </div>
+              <div class="tab-content">
+                <!-- 视频预览 -->
+                <div id="panel_video">
+                  <div class="video-box" id="videoBox">
+                    <span id="videoLabel">未打开实时画面。后台检测持续运行。</span>
+                    <div class="video-overlay" id="videoOverlay" style="display:none;"></div>
+                  </div>
+                  <div class="video-actions">
+                    <button id="btn_start" class="btn btn-primary" title="打开实时画面（不影响后端检测）">打开实时画面</button>
+                    <button id="btn_stop" class="btn" title="关闭实时画面">关闭实时画面</button>
+                    <button id="btn_snapshot" class="btn" title="保存当前画面截图">截图</button>
+                  </div>
+                </div>
+
+                <!-- 传感数据 -->
+                <div id="panel_sensor" style="display:none;">
+                  <div class="sensor-grid">
+                    <div class="sensor-card"><div class="sensor-title">温度</div><div id="sensor_temp" class="sensor-value">-- °C</div></div>
+                    <div class="sensor-card"><div class="sensor-title">振动</div><div id="sensor_vib" class="sensor-value">-- mm/s</div></div>
+                    <div class="sensor-card"><div class="sensor-title">CO浓度</div><div id="sensor_co" class="sensor-value">-- ppm</div></div>
+                  </div>
+                </div>
+
+                <!-- 检测事件流 -->
+                <div id="panel_events" style="display:none;height: 100%;">
+                  <div class="filter-row">
+                    <input id="eventSearch" class="input" placeholder="请输入设备名称/地点" style="flex:1;" />
+                    <select id="eventTypeFilter" class="select" style="width:160px;">
+                      <option value="">全部类型</option>
+                      <option value="抛洒物">抛洒物</option>
+                      <option value="塌方">塌方</option>
+                      <option value="火灾">火灾</option>
+                      <option value="交通事故">交通事故</option>
+                    </select>
+                  </div>
+                  <div id="eventsEmpty" style="display:none;color:var(--text-muted);">暂无该设备相关事件</div>
+                  <div id="eventsList" class="event-list"></div>
+                </div>
+
+                <!-- 设备信息与控制 -->
+                <div id="panel_device" style="display:none;">
+                  <div id="deviceInfo" class="device-info"></div>
+                  <div class="device-actions">
+                    <button id="btn_restart" class="btn">重启设备</button>
+                    <button id="btn_enable" class="btn btn-primary">打开检测预览</button>
+                    <button id="btn_disable" class="btn">关闭检测预览</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </app-layout>
+
+  <!-- 详情弹窗 -->
+  <div id="detailModal" class="modal-overlay">
+    <div class="modal">
+      <div class="modal-header">
+        <div>事件详情</div>
+        <button id="detailClose" class="modal-close" title="关闭"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body">
+        <div id="detailContent"></div>
+      </div>
+      <div class="modal-actions">
+        <button id="detailCancel" class="btn">关闭</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 检测预览弹窗 -->
+  <div id="detectModal" class="modal-overlay">
+    <div class="modal" style="width:720px;">
+      <div class="modal-header">
+        <div>检测预览</div>
+        <button id="detectClose" class="modal-close" title="关闭"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body">
+        <div class="det-preview-controls" style="margin-bottom:10px; display:flex; gap:12px; align-items:center;">
+          <label style="display:flex; align-items:center; gap:6px;"><input type="checkbox" id="toggle_annotate" checked> 显示标注</label>
+          <label style="display:flex; align-items:center; gap:6px;"><input type="checkbox" id="toggle_mute"> 事件提醒静音</label>
+        </div>
+        <div class="video-box" style="height:420px;">
+          <span id="detectLabel">未选择设备</span>
+          <div class="video-overlay" id="detectOverlay" style="display:none;"></div>
+          <div id="detectBoxes" class="detect-boxes"></div>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button id="detectCancel" class="btn">关闭</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 预置数据：事件与区域设备
+    const allEvents = [
+      { id: 'E-1001', type: '抛洒物', location: '隧道A-入口', device: 'CAM-01', confidence: 0.86, time: '2025-11-01 09:24:12' },
+      { id: 'E-1002', type: '塌方', location: '路段C-中段', device: 'RTS-05', confidence: 0.72, time: '2025-11-01 10:02:51' },
+      { id: 'E-1003', type: '火灾', location: '隧道B-中部', device: 'FIRE-02', confidence: 0.91, time: '2025-11-01 10:18:27' },
+      { id: 'E-1004', type: '抛洒物', location: '桥梁D-南侧', device: 'CAM-09', confidence: 0.77, time: '2025-11-01 11:33:45' },
+      { id: 'E-1005', type: '塌方', location: '路段E-匝道', device: 'GEO-03', confidence: 0.69, time: '2025-11-02 08:12:06' },
+      { id: 'E-1006', type: '火灾', location: '隧道A-出口', device: 'FIRE-04', confidence: 0.95, time: '2025-11-02 08:33:41' },
+      { id: 'E-1007', type: '抛洒物', location: '路段F-上行', device: 'CAM-11', confidence: 0.64, time: '2025-11-02 09:07:19' },
+      { id: 'E-1008', type: '抛洒物', location: '隧道A-入口', device: 'CAM-01', confidence: 0.81, time: '2025-11-02 09:20:05' },
+      { id: 'E-1009', type: '塌方', location: '路段C-中段', device: 'RTS-05', confidence: 0.74, time: '2025-11-02 09:55:42' },
+      { id: 'E-1010', type: '火灾', location: '隧道B-中部', device: 'FIRE-02', confidence: 0.92, time: '2025-11-02 10:15:33' },
+      { id: 'E-1011', type: '抛洒物', location: '桥梁D-南侧', device: 'CAM-09', confidence: 0.68, time: '2025-11-02 11:02:18' },
+      { id: 'E-1012', type: '塌方', location: '路段E-匝道', device: 'GEO-03', confidence: 0.71, time: '2025-11-02 11:29:47' },
+      { id: 'E-1013', type: '火灾', location: '隧道A-出口', device: 'FIRE-04', confidence: 0.93, time: '2025-11-02 12:05:11' },
+      { id: 'E-1014', type: '交通事故', location: '收费站C-进口', device: 'CAM-12', confidence: 0.66, time: '2025-11-02 12:30:29' }
+    ];
+
+    // 为事件流补充演示数据：今天、昨天、更早三组均有数据（默认设备 CAM-01）
+    (function addDemoEventsForGroups() {
+      const pad = (n) => String(n).padStart(2, '0');
+      const buildDate = (daysOffset, h, m, s) => {
+        const now = new Date();
+        const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - daysOffset, h, m, s);
+        return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+      };
+      const dev = 'CAM-01';
+      const loc = '隧道A-入口';
+      const push = (id, type, tstr, conf) => allEvents.push({ id, type, location: loc, device: dev, confidence: conf, time: tstr });
+      // 今天（daysOffset=0）
+      push('E-T1', '抛洒物', buildDate(0, 9, 12, 33), 0.88);
+      push('E-T2', '火灾', buildDate(0, 11, 46, 5), 0.91);
+      // 昨天（daysOffset=1）
+      push('E-Y1', '塌方', buildDate(1, 10, 2, 19), 0.73);
+      push('E-Y2', '抛洒物', buildDate(1, 16, 27, 48), 0.79);
+      // 更早（daysOffset=3）
+      push('E-E1', '火灾', buildDate(3, 8, 15, 54), 0.92);
+      push('E-E2', '交通事故', buildDate(3, 19, 3, 11), 0.67);
+    })();
+
+    const areas = [
+      { id: 'area_tunnel_A', name: '隧道A', devices: [
+        { id: 'CAM-01', name: '隧道A入口摄像头', type: '摄像头', location: '隧道A-入口' },
+        { id: 'FIRE-04', name: '隧道A火焰传感器4', type: '火焰传感', location: '隧道A-出口' },
+      ]},
+      { id: 'area_tunnel_B', name: '隧道B', devices: [
+        { id: 'FIRE-02', name: '隧道B火焰传感器2', type: '火焰传感', location: '隧道B-中部' },
+      ]},
+      { id: 'area_bridge_D', name: '桥梁D', devices: [
+        { id: 'CAM-09', name: '桥梁D南侧摄像头9', type: '摄像头', location: '桥梁D-南侧' },
+      ]},
+      { id: 'area_road_C', name: '路段C', devices: [
+        { id: 'RTS-05', name: '路段C应力传感器5', type: '路面应力', location: '路段C-中段' },
+      ]},
+      { id: 'area_road_E', name: '路段E', devices: [
+        { id: 'GEO-03', name: '路段E地质传感器3', type: '地质传感', location: '路段E-匝道' },
+      ]},
+      { id: 'area_road_F', name: '路段F', devices: [
+        { id: 'CAM-11', name: '路段F上行摄像头11', type: '摄像头', location: '路段F-上行' },
+      ]},
+    ];
+
+    // 为设备模拟在线状态（一次性生成）
+    areas.forEach(a => a.devices.forEach(d => { d.online = Math.random() > 0.2; }));
+
+    function deviceIcon(type) {
+      if ((type||'').includes('摄像头')) return 'fa-video';
+      if ((type||'').includes('火焰')) return 'fa-fire';
+      if ((type||'').includes('应力')) return 'fa-road';
+      if ((type||'').includes('地质')) return 'fa-globe';
+      return 'fa-microchip';
+    }
+
+    const state = {
+      selectedAreaId: areas[0]?.id || null,
+      selectedDeviceId: areas[0]?.devices[0]?.id || null,
+      activeTab: 'video',
+      previewPlaying: false,
+      detectionEnabled: true,
+      annotateEnabled: true,
+      eventsMuted: false,
+      sensorTimer: null,
+      selectedEvent: null,
+      expandedAreas: new Set(areas.map(a => a.id)),
+      treeQuery: '',
+      eventQuery: '',
+      eventType: '',
+    };
+
+    // 左侧：区域→设备树渲染
+    function renderTree() {
+      const ul = document.getElementById('deviceTree');
+      ul.innerHTML = '';
+      const q = state.treeQuery.trim();
+      areas.forEach(a => {
+        const matchesArea = !q || a.name.includes(q);
+        const devs = a.devices.filter(d => !q || d.id.includes(q) || d.type.includes(q) || (d.location||'').includes(q));
+        if (!matchesArea && devs.length === 0) return; // 该分支无匹配
+        const li = document.createElement('li');
+        const expanded = state.expandedAreas.has(a.id) || q; // 搜索时自动展开
+        li.innerHTML = `
+          <div class="tree-node ${state.selectedAreaId===a.id?'active':''}">
+            <div class="node-left">
+              <i class="fa-solid ${expanded?'fa-caret-down':'fa-caret-right'} caret"></i>
+              <span>${a.name}</span>
+            </div>
+            <div class="node-meta">${a.devices.length} 台设备</div>
+          </div>
+          <div class="tree-children" style="display:${expanded?'block':'none'}"></div>`;
+        const header = li.querySelector('.tree-node');
+        const children = li.querySelector('.tree-children');
+        header.addEventListener('click', () => { 
+          state.selectedAreaId = a.id; 
+          state.selectedDeviceId = devs[0]?.id || a.devices[0]?.id || null; 
+          if (expanded) state.expandedAreas.delete(a.id); else state.expandedAreas.add(a.id);
+          updatePanels(); 
+          renderTree(); updateToggleAllButton();
+        });
+        devs.forEach(d => {
+          const child = document.createElement('div');
+          child.className = 'tree-node ' + (state.selectedDeviceId===d.id?'active':'');
+          const statusClass = d.online ? 'online' : 'offline';
+          child.innerHTML = `<div class="node-left"><span class="status-dot ${statusClass}"></span><i class="fa-solid ${deviceIcon(d.type)}"></i><span>${d.name || d.id}</span></div><div class="node-meta">${d.location||''}</div>`;
+          child.addEventListener('click', (e) => { e.stopPropagation(); state.selectedAreaId = a.id; state.selectedDeviceId = d.id; updatePanels(); renderTree(); });
+          children.appendChild(child);
+        });
+        ul.appendChild(li);
+      });
+      updateToggleAllButton();
+    }
+
+    // 页签切换
+    function switchTab(tab) {
+      state.activeTab = tab;
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.tab === tab);
+      });
+      document.getElementById('panel_video').style.display = tab === 'video' ? '' : 'none';
+      document.getElementById('panel_sensor').style.display = tab === 'sensor' ? '' : 'none';
+      document.getElementById('panel_events').style.display = tab === 'events' ? '' : 'none';
+      document.getElementById('panel_device').style.display = tab === 'device' ? '' : 'none';
+      if (tab !== 'sensor' && state.sensorTimer) { clearInterval(state.sensorTimer); state.sensorTimer = null; }
+      updatePanels();
+    }
+
+    // 右侧各面板更新
+    function updatePanels() {
+      updateVideoPanel();
+      updateSensorPanel();
+      updateEventsPanel();
+      updateDevicePanel();
+    }
+
+    function updateVideoPanel() {
+      if (state.activeTab !== 'video') return;
+      const label = document.getElementById('videoLabel');
+      const overlay = document.getElementById('videoOverlay');
+      if (!state.selectedDeviceId) {
+        label.textContent = '选择设备以预览';
+        overlay.style.display = 'none';
+        return;
+      }
+      const area = areas.find(x => x.id === state.selectedAreaId);
+      const dev = area?.devices.find(d => d.id === state.selectedDeviceId);
+      const deviceLabel = dev?.name || state.selectedDeviceId;
+      label.textContent = `模拟视频流 · ${deviceLabel}`;
+      if (state.previewPlaying) {
+        overlay.textContent = state.detectionEnabled ? `检测中 · ${deviceLabel}` : `预览中 · ${deviceLabel}`;
+      } else {
+        overlay.textContent = '未打开实时画面。后台检测持续运行。';
+      }
+      overlay.style.display = 'block';
+    }
+
+    function updateSensorPanel() {
+      if (state.activeTab !== 'sensor') return;
+      if (!state.selectedDeviceId) return;
+      if (state.sensorTimer) return; // 已在更新
+      const tempEl = document.getElementById('sensor_temp');
+      const vibEl = document.getElementById('sensor_vib');
+      const coEl = document.getElementById('sensor_co');
+      const base = Math.random() * 3;
+      state.sensorTimer = setInterval(() => {
+        const t = (20 + base + Math.random() * 10).toFixed(1);
+        const v = (0.5 + Math.random() * 4).toFixed(2);
+        const c = (5 + Math.random() * 30).toFixed(0);
+        tempEl.textContent = `${t} °C`;
+        vibEl.textContent = `${v} mm/s`;
+        coEl.textContent = `${c} ppm`;
+      }, 1000);
+    }
+
+    function updateEventsPanel() {
+      if (state.activeTab !== 'events') return;
+      const emptyEl = document.getElementById('eventsEmpty');
+      const listEl = document.getElementById('eventsList');
+      const rows = allEvents
+        .filter(e => e.device === state.selectedDeviceId)
+        .filter(e => !state.eventType || e.type === state.eventType)
+        .filter(e => {
+          const q = state.eventQuery.trim();
+          if (!q) return true;
+          return (e.type+e.location+e.device+e.id).includes(q);
+        })
+        .sort((a,b) => b.time.localeCompare(a.time));
+      listEl.innerHTML = '';
+      if (!rows.length) { emptyEl.style.display = 'block'; return; } else { emptyEl.style.display = 'none'; }
+      renderEventsTimeline(rows, listEl);
+    }
+
+    function renderEventsTimeline(rows, container) {
+      const q = state.eventQuery.trim();
+      const pad = (n) => String(n).padStart(2, '0');
+      const now = new Date();
+      const todayStr = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
+      const yst = new Date(now.getTime() - 24*3600*1000);
+      const ystStr = `${yst.getFullYear()}-${pad(yst.getMonth()+1)}-${pad(yst.getDate())}`;
+      const groups = { '今天': [], '昨天': [], '更早': [] };
+      rows.forEach(r => {
+        const dstr = r.time.slice(0,10);
+        if (dstr === todayStr) groups['今天'].push(r);
+        else if (dstr === ystStr) groups['昨天'].push(r);
+        else groups['更早'].push(r);
+      });
+      let isFirst = true;
+      ['今天','昨天','更早'].forEach(label => {
+        const arr = groups[label];
+        if (!arr.length) return;
+        const title = document.createElement('div');
+        title.className = 'group-title';
+        title.textContent = label;
+        container.appendChild(title);
+        arr.forEach(row => {
+        const item = document.createElement('div');
+        item.className = 'event-item' + (isFirst ? ' latest' : '');
+        item.innerHTML = eventItemHtml(row, q);
+        item.style.cursor = 'pointer';
+        item.addEventListener('click', () => showDetail(row.id));
+        container.appendChild(item);
+        isFirst = false;
+      });
+      });
+    }
+
+    const typeIconMap = { '抛洒物': 'fa-box-open', '塌方': 'fa-mountain', '火灾': 'fa-fire', '交通事故': 'fa-car-burst' };
+    const typeColorMap = { '抛洒物': '#f59e0b', '塌方': '#8b5cf6', '火灾': '#ef4444', '交通事故': '#3b82f6' };
+    function formatTimestamp(str) {
+      const d = new Date(str.replace(' ', 'T'));
+      const pad = (n) => String(n).padStart(2, '0');
+      return `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
+    }
+    function formatHMS(str) {
+      const d = new Date(str.replace(' ', 'T'));
+      const pad = (n) => String(n).padStart(2, '0');
+      return `${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
+    }
+    function eventName(row) {
+      return `${row.type}-${row.device}-${formatHMS(row.time)}`;
+    }
+    function hl(str, q) {
+      if (!q) return str;
+      const esc = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const re = new RegExp(esc, 'gi');
+      return String(str).replace(re, (m) => `<mark>${m}</mark>`);
+    }
+    function eventItemHtml(row, q) {
+      const typeIcon = typeIconMap[row.type] || 'fa-tag';
+      const typeColor = typeColorMap[row.type] || '#3B6AE8';
+      const confPct = Math.round((row.confidence||0)*100);
+      const confColor = row.confidence >= 0.85 ? '#10b981' : row.confidence >= 0.7 ? '#f59e0b' : '#ef4444';
+      return `
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <strong>${row.time}</strong>
+          <span class="type-badge" style="background:${typeColor}"><i class="fa-solid ${typeIcon}"></i> ${hl(row.type, q)}</span>
+          <span style="color:var(--text-muted);">${confPct}%</span>
+        </div>
+        <div class="event-meta">
+          <span>${hl(eventName(row), q)}</span>
+          <span>${hl(row.location, q)}</span>
+          <span>${hl(row.device, q)}</span>
+        </div>
+        <div class="confidence-bar"><div class="confidence-fill" style="width:${confPct}%; background:${confColor}"></div></div>
+        `;
+    }
+
+
+    function updateDevicePanel() {
+      if (state.activeTab !== 'device') return;
+      const infoEl = document.getElementById('deviceInfo');
+      const area = areas.find(x => x.id === state.selectedAreaId);
+      const dev = area?.devices.find(d => d.id === state.selectedDeviceId);
+       if (!dev) { infoEl.innerHTML = '<div>未选择设备</div>'; return; }
+       infoEl.innerHTML = `
+        <div>设备编码</div><div>${dev.id}</div>
+        <div>设备名称</div><div>${dev.name || dev.id}</div>
+        <div>类型</div><div>${dev.type}</div>
+        <div>位置</div><div>${dev.location}</div>
+        <div>在线状态</div><div>在线</div>
+        <div>检测状态</div><div>${state.detectionEnabled ? '检测已开启' : '检测已停止'}</div>
+       `;
+     }
+
+    // 检测预览弹窗内容更新
+    function updateDetectModal() {
+      const overlayEl = document.getElementById('detectOverlay');
+      const labelEl = document.getElementById('detectLabel');
+      if (!state.selectedDeviceId) {
+        labelEl.textContent = '未选择设备';
+        overlayEl.style.display = 'none';
+        return;
+      }
+      const area = areas.find(x => x.id === state.selectedAreaId);
+      const dev = area?.devices.find(d => d.id === state.selectedDeviceId);
+      const deviceLabel = dev?.name || state.selectedDeviceId;
+      labelEl.textContent = `检测预览 · ${deviceLabel}`;
+      const modalShown = document.getElementById('detectModal').classList.contains('show');
+      if (!modalShown) return; // 仅在弹窗显示时更新覆盖文案
+      if (state.previewPlaying) {
+        overlayEl.textContent = state.detectionEnabled ? `检测中 · ${deviceLabel}` : `预览中 · ${deviceLabel}`;
+      } else {
+        overlayEl.textContent = state.detectionEnabled ? '未打开实时画面。后台检测持续运行。' : '检测已停止。';
+      }
+      if (state.eventsMuted) overlayEl.textContent += ' · 已静音';
+      overlayEl.style.display = 'block';
+      renderDetectBoxes();
+    }
+
+    // 绘制模拟检测框
+    function renderDetectBoxes() {
+      const layer = document.getElementById('detectBoxes');
+      if (!layer) return;
+      layer.innerHTML = '';
+      if (!(state.previewPlaying && state.detectionEnabled && state.annotateEnabled)) return;
+      const boxes = [
+        { left:'12%', top:'18%', width:'22%', height:'28%', label:'抛洒物' },
+        { left:'56%', top:'40%', width:'26%', height:'22%', label:'行人' }
+      ];
+      boxes.forEach(b => {
+        const el = document.createElement('div');
+        el.className = 'detect-box';
+        el.style.left = b.left; el.style.top = b.top; el.style.width = b.width; el.style.height = b.height;
+        el.innerHTML = `<span class="tag">${b.label}</span>`;
+        layer.appendChild(el);
+      });
+    }
+
+    // 详情弹窗（沿用原实现）
+    function showDetail(id) {
+      const row = allEvents.find(x => x.id === id);
+      state.selectedEvent = row;
+      const box = document.getElementById('detailContent');
+      const eventNameStr = `${row.type}-${row.device}-${formatHMS(row.time)}`;
+      box.innerHTML = `
+        <div style="display:grid;grid-template-columns:120px 1fr;gap:8px;">
+          <div>事件名称</div><div>${eventNameStr}</div>
+          <div>类型</div><div>${row.type}</div>
+          <div>位置</div><div>${row.location}</div>
+          <div>设备/摄像头</div><div>${row.device}</div>
+          <div>置信度</div><div>${(row.confidence*100).toFixed(0)}%</div>
+          <div>发生时间</div><div>${row.time}</div>
+        </div>`;
+      document.getElementById('detailModal').classList.add('show');
+    }
+
+    // 页签按钮绑定
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+    });
+
+    // 视频控制
+    document.getElementById('btn_start').addEventListener('click', () => { state.previewPlaying = true; updateVideoPanel(); });
+    document.getElementById('btn_stop').addEventListener('click', () => { state.previewPlaying = false; updateVideoPanel(); });
+    document.getElementById('btn_snapshot').addEventListener('click', () => { if (!state.selectedDeviceId) return; alert(`已保存 ${state.selectedDeviceId} 的截图（模拟）`); });
+
+    // 设备控制
+    document.getElementById('btn_restart').addEventListener('click', () => { if (!state.selectedDeviceId) return; alert(`已发送重启命令到 ${state.selectedDeviceId}（模拟）`); });
+    document.getElementById('btn_enable').addEventListener('click', () => { 
+      if (!state.selectedDeviceId) return; 
+      state.previewPlaying = true; 
+      document.getElementById('detectModal').classList.add('show');
+      updateDetectModal();
+    });
+    document.getElementById('btn_disable').addEventListener('click', () => { 
+      if (!state.selectedDeviceId) return; 
+      state.previewPlaying = false; 
+      document.getElementById('detectModal').classList.remove('show');
+      updateDetectModal();
+    });
+
+    // 弹窗按钮沿用
+    document.getElementById('detailClose').addEventListener('click', () => document.getElementById('detailModal').classList.remove('show'));
+    document.getElementById('detailCancel').addEventListener('click', () => document.getElementById('detailModal').classList.remove('show'));
+    // 去掉“标记为已处理”相关逻辑
+
+    // 事件筛选（仅时间轴视图）
+    document.getElementById('eventSearch').addEventListener('input', (e) => { state.eventQuery = e.target.value; updateEventsPanel(); });
+    document.getElementById('eventTypeFilter').addEventListener('change', (e) => { state.eventType = e.target.value; updateEventsPanel(); });
+
+    // 树搜索与展开/折叠
+    document.getElementById('treeSearch').addEventListener('input', (e) => { state.treeQuery = e.target.value; renderTree(); });
+    function updateToggleAllButton() {
+      const btn = document.getElementById('treeToggleAll');
+      if (!btn) return;
+      const allExpanded = state.expandedAreas.size === areas.length;
+      btn.textContent = allExpanded ? '折叠全部' : '展开全部';
+      btn.title = btn.textContent;
+    }
+    document.getElementById('treeToggleAll').addEventListener('click', () => { 
+      const allExpanded = state.expandedAreas.size === areas.length;
+      state.expandedAreas = allExpanded ? new Set() : new Set(areas.map(a=>a.id)); 
+      renderTree(); updateToggleAllButton();
+    });
+    // 检测预览弹窗关闭
+    document.getElementById('detectClose').addEventListener('click', () => {
+      state.previewPlaying = false;
+      document.getElementById('detectModal').classList.remove('show');
+      updateDetectModal();
+    });
+    document.getElementById('detectCancel').addEventListener('click', () => {
+      state.previewPlaying = false;
+      document.getElementById('detectModal').classList.remove('show');
+      updateDetectModal();
+    });
+    // 弹窗开关事件
+    document.getElementById('toggle_annotate').addEventListener('change', (e) => {
+      state.annotateEnabled = e.target.checked;
+      renderDetectBoxes();
+    });
+    document.getElementById('toggle_mute').addEventListener('change', (e) => {
+      state.eventsMuted = e.target.checked;
+      updateDetectModal();
+    });
+
+    // 初始：渲染左侧树与默认页签
+    renderTree();
+    switchTab('video');
+  </script>
+</body>
+</html>

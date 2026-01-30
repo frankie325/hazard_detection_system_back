@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>高速公路危害智能识别与应急管理系统</title>
+<link rel="icon" href="assets/logo-hrecs-radar.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="css/styles.css">
+  <!-- Ant Design Vue 基础样式 -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ant-design-vue@3/dist/antd.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      background-color: #f5f7fa;
+      display: flex;
+      min-height: 100vh;
+    }
+    
+    /* 左侧导航区域（原型导航，简约风格） */
+    .sidebar {
+      width: 200px;
+      background-color: #fafafa;
+      color: #333;
+      position: fixed;
+      height: 100vh;
+      overflow-y: auto;
+      border-right: 1px solid #e5e7eb;
+      z-index: 10;
+    }
+    
+    .sidebar-header {
+      padding: 15px;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    
+    .sidebar-header h1 {
+      font-size: 16px;
+      margin: 0;
+      text-align: center;
+    }
+    
+    .nav-section {
+      margin-top: 15px;
+    }
+    
+    .nav-section-title {
+      padding: 8px 15px;
+      font-size: 12px;
+      text-transform: uppercase;
+      color: #666;
+      letter-spacing: 1px;
+    }
+    
+    .nav-items {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    
+    .nav-item {
+      padding: 10px 12px;
+      cursor: pointer;
+    }
+    
+    .nav-item:hover {
+      background-color: #f0f3f7;
+    }
+    
+    .nav-item.active {
+      background-color: #e6f0ff;
+    }
+    
+    .nav-item i {
+      display: none;
+    }
+    
+    /* 右侧内容区域 */
+    .main-content {
+      flex: 1;
+      margin-left: 0;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+    
+    .header {
+      background-color: #fff;
+      padding: 15px 20px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 5;
+    }
+    
+    .header-title {
+      font-size: 18px;
+      font-weight: 600;
+    }
+    
+    .user-info {
+      display: flex;
+      align-items: center;
+    }
+    
+    .user-info img {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      margin-left: 10px;
+    }
+    
+    .page-frame {
+      width: 100%;
+      height: 100vh;
+      border: none;
+      background-color: #fff;
+    }
+    
+    /* 折叠按钮与折叠态 */
+    .collapse-toggle { position: fixed; top: 10px; left: 206px; background: #fff; border: 1px solid #e5e7eb; color: #333; border-radius: 6px; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 20; }
+    body.nav-collapsed .collapse-toggle { left: 6px; }
+    .sidebar { transition: transform 0.2s ease; }
+    body.nav-collapsed .sidebar { transform: translateX(-100%); }
+    body.nav-collapsed .main-content { margin-left: 0; }
+    
+    .loading {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 200px;
+    }
+    
+    .spinner {
+      border: 3px solid rgba(0, 0, 0, 0.1);
+      border-radius: 50%;
+      border-top: 3px solid #3498db;
+      width: 30px;
+      height: 30px;
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    /* 子菜单样式 */
+    .submenu {
+      list-style: none;
+      padding-left: 26px;
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease;
+    }
+    
+    .submenu.open {
+      max-height: 500px;
+    }
+    
+    .submenu-item {
+      padding: 8px 15px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    
+    .submenu-item:hover {
+      background-color: #f5f7fa;
+    }
+    
+    .submenu-item.active {
+      background-color: #e6f0ff;
+    }
+    
+    .has-submenu {
+      position: relative;
+    }
+    
+    .has-submenu::after { display: none; }
+    .has-submenu.open::after { display: none; }
+    
+    /* 用户头像下拉菜单 */
+    .user-avatar-wrapper { position: relative; }
+    .avatar-img { width: 32px; height: 32px; border-radius: 50%; cursor: pointer; }
+    .user-menu { position: absolute; right: 0; top: 40px; background: #fff; color: #333; border: 1px solid #e5e7eb; border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.12); list-style: none; min-width: 140px; padding: 8px 0; margin: 0; display: none; z-index: 100; }
+    .user-avatar-wrapper:hover .user-menu { display: block; }
+    .user-menu li { padding: 10px 12px; cursor: pointer; font-size: 14px; }
+    .user-menu li:hover { background: #f5f7fa; }
+    
+    /* 修改密码弹窗 */
+    .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: none; align-items: center; justify-content: center; z-index: 200; }
+    .modal-backdrop.open { display: flex; }
+    .modal { background:#fff; border-radius: 12px; width: 420px; max-width: 90vw; padding: 20px; box-shadow: 0 12px 32px rgba(0,0,0,.24); }
+    .modal h3 { margin: 0 0 12px; font-size: 18px; }
+    .modal .form-group { margin-bottom: 12px; }
+    .modal .form-group label { display: block; margin-bottom: 6px; font-size: 14px; color: #333; }
+    .modal .form-group input { width: 100%; padding: 10px; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 14px; }
+    .modal .actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px; }
+    .btn { padding: 8px 14px; border-radius: 8px; border: 1px solid transparent; cursor: pointer; font-size: 14px; }
+    .btn-secondary { background: #f5f7fa; border-color: #e5e7eb; }
+    .btn-primary { background: #4299e1; color: #fff; }
+    
+    /* 首页模块分行布局 */
+    .module-row { margin: 0 0 24px; }
+    .row-title { font-size: 16px; font-weight: 600; color: #111827; margin: 0 0 10px; padding: 0 4px; }
+    .row-grid { display: flex; gap: 16px; overflow: visible; padding: 0 0 8px; }
+    .row-grid::-webkit-scrollbar { height: 8px; }
+    .row-grid::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 8px; }
+    .row-grid::-webkit-scrollbar-track { background: transparent; }
+    /* 卡片样式增强：区分卡片头与内页（iframe）视觉风格 */
+    .ant-card { border: 1px solid #e5e7eb; border-radius: 8px; background: #fff; overflow: hidden; }
+    .ant-card-head { background: #f3f4f6; border-bottom: 1px solid #e5e7eb; padding: 8px 12px; position: relative; }
+    .ant-card-head-title { color: #0f172a; font-weight: 600; font-size: 14px; letter-spacing: 0.2px; }
+    /* 左侧色条强调，便于与 iframe 内部系统颜色区分 */
+    .ant-card-head::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: #2563eb; opacity: 0.85; }
+    /* 卡片宽度由内页原型内容动态决定（JS 计算设置） */
+  </style>
+</head>
+<body>
+  <!-- 左侧导航区域已删除（按需可再添加） -->
+  
+  <!-- 右侧内容区域：方案A - 同时展示多个页面 -->
+  <div class="main-content">
+    <div class="zoom-wrap" style="position:relative;overflow:auto;">
+      <div id="zoomSizer" class="zoom-sizer" style="position:relative;width:auto;height:auto;">
+        <div id="zoomTarget" class="all-pages-grid" style="transform-origin:0 0;transform:scale(1);display:block;padding:8px 0;position:absolute;left:0;top:0;">
+        <div class="ant-card ant-card-bordered page-panel" style="position:relative;">
+          <div class="ant-card-head"><div class="ant-card-head-title">登录页</div></div>
+          <div class="ant-card-body" style="padding:0;position:relative;">
+            <iframe src="pages/login.html" frameborder="0" style="width:100%;height:640px;background:#fff;"></iframe>
+            <!-- 点击打开原型：覆盖层，点击后在新窗口打开对应页面 -->
+            <a class="iframe-mask" href="pages/login.html" target="_blank" title="点击打开原型" style="position:absolute;inset:0;display:block;background:transparent;z-index:5"></a>
+          </div>
+        </div>
+        
+        <!-- 新增：系统管理 · 用户管理 原型面板 -->
+        <div class="ant-card ant-card-bordered page-panel" style="position:relative;">
+          <div class="ant-card-head"><div class="ant-card-head-title">系统管理 · 用户管理</div></div>
+          <div class="ant-card-body" style="padding:0;position:relative;">
+            <iframe src="pages/system-users.html" frameborder="0" style="width:100%;height:640px;background:#fff;"></iframe>
+            <!-- 点击打开原型：覆盖层，点击后在新窗口打开对应页面 -->
+            <a class="iframe-mask" href="pages/system-users.html" target="_blank" title="点击打开原型" style="position:absolute;inset:0;display:block;background:transparent;z-index:5"></a>
+          </div>
+        </div>
+        
+        <!-- 新增：系统管理 · 部门管理 原型面板 -->
+        <div class="ant-card ant-card-bordered page-panel" style="position:relative;">
+          <div class="ant-card-head"><div class="ant-card-head-title">系统管理 · 部门管理</div></div>
+          <div class="ant-card-body" style="padding:0;position:relative;">
+            <iframe src="pages/system-departments.html" frameborder="0" style="width:100%;height:640px;background:#fff;"></iframe>
+            <!-- 点击打开原型：覆盖层，点击后在新窗口打开对应页面 -->
+            <a class="iframe-mask" href="pages/system-departments.html" target="_blank" title="点击打开原型" style="position:absolute;inset:0;display:block;background:transparent;z-index:5"></a>
+          </div>
+        </div>
+
+        <!-- 新增：系统管理 · 角色管理 原型面板 -->
+        <div class="ant-card ant-card-bordered page-panel" style="position:relative;">
+          <div class="ant-card-head"><div class="ant-card-head-title">系统管理 · 角色管理</div></div>
+          <div class="ant-card-body" style="padding:0;position:relative;">
+            <iframe src="pages/system-roles.html" frameborder="0" style="width:100%;height:640px;background:#fff;"></iframe>
+            <!-- 点击打开原型：覆盖层，点击后在新窗口打开对应页面 -->
+            <a class="iframe-mask" href="pages/system-roles.html" target="_blank" title="点击打开原型" style="position:absolute;inset:0;display:block;background:transparent;z-index:5"></a>
+          </div>
+        </div>
+
+        <!-- 新增：系统管理 · 区域管理 原型面板 -->
+        <div class="ant-card ant-card-bordered page-panel" style="position:relative;">
+          <div class="ant-card-head"><div class="ant-card-head-title">系统管理 · 区域管理</div></div>
+          <div class="ant-card-body" style="padding:0;position:relative;">
+            <iframe src="pages/system-areas.html" frameborder="0" style="width:100%;height:640px;background:#fff;"></iframe>
+            <!-- 点击打开原型：覆盖层，点击后在新窗口打开对应页面 -->
+            <a class="iframe-mask" href="pages/system-areas.html" target="_blank" title="点击打开原型" style="position:absolute;inset:0;display:block;background:transparent;z-index:5"></a>
+          </div>
+        </div>
+
+        <!-- 新增：系统管理 · 设备管理 原型面板 -->
+        <div class="ant-card ant-card-bordered page-panel" style="position:relative;">
+          <div class="ant-card-head"><div class="ant-card-head-title">系统管理 · 设备管理</div></div>
+          <div class="ant-card-body" style="padding:0;position:relative;">
+            <iframe src="pages/system-devices.html" frameborder="0" style="width:100%;height:640px;background:#fff;"></iframe>
+            <!-- 点击打开原型：覆盖层，点击后在新窗口打开对应页面 -->
+            <a class="iframe-mask" href="pages/system-devices.html" target="_blank" title="点击打开原型" style="position:absolute;inset:0;display:block;background:transparent;z-index:5"></a>
+          </div>
+        </div>
+
+        <!-- 新增：危险检测 · 设备监控 原型面板 -->
+        <div class="ant-card ant-card-bordered page-panel" style="position:relative;">
+          <div class="ant-card-head"><div class="ant-card-head-title">危险检测 · 设备监控</div></div>
+          <div class="ant-card-body" style="padding:0;position:relative;">
+            <iframe src="pages/device-monitor.html" frameborder="0" style="width:100%;height:640px;background:#fff;"></iframe>
+            <!-- 点击打开原型：覆盖层，点击后在新窗口打开对应页面 -->
+            <a class="iframe-mask" href="pages/device-monitor.html" target="_blank" title="点击打开原型" style="position:absolute;inset:0;display:block;background:transparent;z-index:5"></a>
+          </div>
+        </div>
+
+        <!-- 新增：危险检测 · 事件流 原型面板 -->
+        <div class="ant-card ant-card-bordered page-panel" style="position:relative;">
+          <div class="ant-card-head"><div class="ant-card-head-title">危险检测 · 事件流</div></div>
+          <div class="ant-card-body" style="padding:0;position:relative;">
+            <iframe src="pages/danger-events.html" frameborder="0" style="width:100%;height:640px;background:#fff;"></iframe>
+            <a class="iframe-mask" href="pages/danger-events.html" target="_self" title="点击打开原型" style="position:absolute;inset:0;display:block;background:transparent;z-index:5"></a>
+          </div>
+        </div>
+
+        <!-- 新增：告警模块 · 告警规则配置 原型面板 -->
+        <div class="ant-card ant-card-bordered page-panel" style="position:relative;">
+          <div class="ant-card-head"><div class="ant-card-head-title">告警模块 · 告警规则配置</div></div>
+          <div class="ant-card-body" style="padding:0;position:relative;">
+            <iframe src="pages/alert-rule.html" frameborder="0" style="width:100%;height:640px;background:#fff;"></iframe>
+            <!-- 点击打开原型：覆盖层，点击后在新窗口打开对应页面 -->
+            <a class="iframe-mask" href="pages/alert-rule.html" target="_blank" title="点击打开原型" style="position:absolute;inset:0;display:block;background:transparent;z-index:5"></a>
+          </div>
+        </div>
+
+        <!-- 新增：危险告警 · 告警消息 原型面板（卡片视图） -->
+        <div class="ant-card ant-card-bordered page-panel" style="position:relative;">
+          <div class="ant-card-head"><div class="ant-card-head-title">危险告警 · 告警消息（卡片视图）</div></div>
+          <div class="ant-card-body" style="padding:0;position:relative;">
+            <iframe src="pages/alert-messages.html" frameborder="0" style="width:100%;height:640px;background:#fff;"></iframe>
+            <!-- 点击打开原型：覆盖层，点击后在新窗口打开对应页面 -->
+            <a class="iframe-mask" href="pages/alert-messages.html" target="_blank" title="点击打开原型" style="position:absolute;inset:0;display:block;background:transparent;z-index:5"></a>
+          </div>
+        </div>
+
+        <!-- 新增：危险告警 · 告警详情 原型面板（独立页面） -->
+        <div class="ant-card ant-card-bordered page-panel" style="position:relative;">
+          <div class="ant-card-head"><div class="ant-card-head-title">危险告警 · 告警消息 · 告警详情</div></div>
+          <div class="ant-card-body" style="padding:0;position:relative;">
+            <iframe src="pages/alert-detail.html" frameborder="0" style="width:100%;height:640px;background:#fff;"></iframe>
+            <!-- 点击打开原型：覆盖层，点击后在新窗口打开对应页面 -->
+            <a class="iframe-mask" href="pages/alert-detail.html" target="_blank" title="点击打开原型" style="position:absolute;inset:0;display:block;background:transparent;z-index:5"></a>
+          </div>
+        </div>
+
+        <!-- 新增：应急指挥 · 指挥中心 原型面板 -->
+        <div class="ant-card ant-card-bordered page-panel" style="position:relative;">
+          <div class="ant-card-head"><div class="ant-card-head-title">应急指挥 · 指挥中心</div></div>
+          <div class="ant-card-body" style="padding:0;position:relative;">
+            <iframe src="pages/emergency-center.html" frameborder="0" style="width:100%;height:640px;background:#fff;"></iframe>
+            <a class="iframe-mask" href="pages/emergency-center.html" target="_blank" title="点击打开原型" style="position:absolute;inset:0;display:block;background:transparent;z-index:5"></a>
+          </div>
+        </div>
+
+        <!-- 新增：应急指挥 · 资源调度 原型面板 -->
+        <div class="ant-card ant-card-bordered page-panel" style="position:relative;">
+          <div class="ant-card-head"><div class="ant-card-head-title">应急指挥 · 资源调度</div></div>
+          <div class="ant-card-body" style="padding:0;position:relative;">
+            <iframe src="pages/emergency-dispatch.html" frameborder="0" style="width:100%;height:640px;background:#fff;"></iframe>
+            <a class="iframe-mask" href="pages/emergency-dispatch.html" target="_blank" title="点击打开原型" style="position:absolute;inset:0;display:block;background:transparent;z-index:5"></a>
+          </div>
+        </div>
+
+        <!-- 已移除：作战地图、指令管理、现场处置原型面板（采用简化三页方案） -->
+
+        <!-- 新增：应急指挥 · 报告复盘 原型面板 -->
+        <div class="ant-card ant-card-bordered page-panel" style="position:relative;">
+          <div class="ant-card-head"><div class="ant-card-head-title">应急指挥 · 报告复盘</div></div>
+          <div class="ant-card-body" style="padding:0;position:relative;">
+            <iframe src="pages/emergency-reports.html" frameborder="0" style="width:100%;height:640px;background:#fff;"></iframe>
+            <a class="iframe-mask" href="pages/emergency-reports.html" target="_blank" title="点击打开原型" style="position:absolute;inset:0;display:block;background:transparent;z-index:5"></a>
+          </div>
+        </div>
+        </div>
+      </div>
+      <div id="zoomIndicator" style="position:fixed;right:16px;bottom:16px;background:rgba(0,0,0,.6);color:#fff;font-size:12px;padding:6px 10px;border-radius:16px;pointer-events:none;">100%</div>
+    </div>
+  </div>
+
+
+  <script>
+    // 页面加载完成后执行
+    document.addEventListener('DOMContentLoaded', function() {
+      // 获取所有导航项
+      const navItems = document.querySelectorAll('.nav-item');
+      const submenuItems = document.querySelectorAll('.submenu-item');
+      const hasSubmenuItems = document.querySelectorAll('.has-submenu');
+      const pageFrame = document.getElementById('pageFrame');
+      const collapseToggle = document.getElementById('collapseToggle');
+      if (collapseToggle) {
+        collapseToggle.addEventListener('click', function() {
+          document.body.classList.toggle('nav-collapsed');
+          const collapsed = document.body.classList.contains('nav-collapsed');
+          this.textContent = collapsed ? '›' : '‹';
+        });
+      }
+      
+      // 默认加载仪表盘页面
+      loadPage('dashboard');
+      
+      // 为有子菜单的项添加点击事件
+      hasSubmenuItems.forEach(item => {
+        item.addEventListener('click', function() {
+          // 切换子菜单的显示状态
+          this.classList.toggle('open');
+          const submenu = this.nextElementSibling;
+          submenu.classList.toggle('open');
+        });
+      });
+      
+      // 为导航项添加点击事件
+      navItems.forEach(item => {
+        if (!item.classList.contains('has-submenu')) {
+          item.addEventListener('click', function() {
+            // 移除所有活动状态
+            navItems.forEach(i => i.classList.remove('active'));
+            // 添加当前项的活动状态
+            this.classList.add('active');
+            
+            // 获取页面名称并加载
+            const pageName = this.getAttribute('data-page');
+            loadPage(pageName);
+          });
+        }
+      });
+      
+      // 为子菜单项添加点击事件
+      submenuItems.forEach(item => {
+        item.addEventListener('click', function(e) {
+          e.stopPropagation(); // 阻止事件冒泡
+          
+          // 移除所有子菜单项的活动状态
+          submenuItems.forEach(i => i.classList.remove('active'));
+          // 添加当前项的活动状态
+          this.classList.add('active');
+          
+          // 获取页面名称和标签并加载
+          const pageName = this.getAttribute('data-page');
+          const tabName = this.getAttribute('data-tab');
+          loadPage(pageName, tabName);
+        });
+      });
+      
+      // 加载页面内容（通过 iframe 载入公共框架或登录页）
+      function loadPage(pageName, tabName = null) {
+        if (!pageFrame) return;
+        let pageUrl = '';
+        if (pageName === 'login') {
+          pageUrl = 'pages/login.html';
+        } else {
+          const hash = `#module=${encodeURIComponent(pageName)}${tabName ? `&tab=${encodeURIComponent(tabName)}` : ''}`;
+          pageUrl = `pages/frame.html${hash}`;
+        }
+        pageFrame.src = pageUrl;
+      }
+
+      // 将面板按大模块分行排版
+      function groupPanelsIntoRows() {
+        const container = document.getElementById('zoomTarget');
+        if (!container) return;
+        const panels = Array.from(container.querySelectorAll('.page-panel'));
+        if (!panels.length) return;
+        // 移除 grid 布局类并强制块级布局，视窗承担横向滚动
+        container.classList.remove('all-pages-grid');
+        container.style.display = 'block';
+        const order = ['登录','系统管理','危害检测','危险告警','应急指挥'];
+        const groups = {};
+        function makeSection(name){
+          const sec = document.createElement('section');
+          sec.className = 'module-row';
+          const title = document.createElement('div');
+          title.className = 'row-title';
+          title.textContent = name;
+          const grid = document.createElement('div');
+          grid.className = 'row-grid';
+          sec.appendChild(title);
+          sec.appendChild(grid);
+          groups[name] = { sec, grid };
+        }
+        order.forEach(makeSection);
+        panels.forEach(panel => {
+          const t = (panel.querySelector('.ant-card-head-title') || {}).textContent || '';
+          let group = '应急指挥';
+          if (t.includes('登录')) group = '登录';
+          else if (t.includes('系统管理')) group = '系统管理';
+          else if (t.includes('危险检测')) group = '危害检测';
+          else if (t.includes('告警')) group = '危险告警';
+          else if (t.includes('应急指挥')) group = '应急指挥';
+          groups[group].grid.appendChild(panel);
+        });
+        container.innerHTML = '';
+        const frag = document.createDocumentFragment();
+        order.forEach(name => frag.appendChild(groups[name].sec));
+        container.appendChild(frag);
+      }
+
+      // 根据 iframe 内页内容动态设置卡片宽度与高度，确保原型完整展示
+      function adjustIframeSizes(){
+        const container = document.getElementById('zoomTarget');
+        if (!container) return;
+        const iframes = Array.from(container.querySelectorAll('.page-panel iframe'));
+        iframes.forEach(iframe => {
+          const applySize = () => {
+            // 统一使用固定原型尺寸 1920x1080
+            const panel = iframe.closest('.page-panel');
+            if (panel) panel.style.width = '1920px';
+            iframe.style.height = '1080px';
+            if (window.__resetZoomBase) window.__resetZoomBase();
+          };
+          iframe.addEventListener('load', applySize, { once: true });
+          // 若已加载完成，立即计算一次
+          applySize();
+          // 渐进式保障：延迟再测一次，防止资源晚加载导致尺寸偏小
+          setTimeout(() => {
+            try { applySize(); } catch (e) {}
+          }, 300);
+        });
+      }
+
+      // 页面初始化后执行分组排版
+      groupPanelsIntoRows();
+      adjustIframeSizes();
+    });
+
+    // ===== 缩放与原型查看 =====
+    (function(){
+      const zoomTarget = document.getElementById('zoomTarget');
+      const zoomSizer = document.getElementById('zoomSizer');
+      const zoomIndicator = document.getElementById('zoomIndicator');
+      const zoomWrap = document.querySelector('.zoom-wrap');
+      let zoom = 0.25;
+      const MIN_ZOOM = 0.25, MAX_ZOOM = 2, STEP = 0.1;
+      let baseWidth = 0, baseHeight = 0;
+      function setZoom(val){
+        zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, parseFloat(val.toFixed(2))));
+        if (zoomTarget) {
+          zoomTarget.style.transform = `scale(${zoom})`;
+        }
+        // 用 sizer 控制滚动边界，避免直接限制内容容器尺寸影响内部布局
+        if (zoomSizer) {
+          if (baseWidth) zoomSizer.style.width = `${Math.round(baseWidth * zoom)}px`;
+          if (baseHeight) zoomSizer.style.height = `${Math.round(baseHeight * zoom)}px`;
+        }
+        if (zoomIndicator) zoomIndicator.textContent = `${Math.round(zoom*100)}%`;
+      }
+      function resetZoomBase(){
+        if (!zoomTarget) return;
+        // 以内容的自然尺寸作为基准，不受缩放影响
+        baseWidth = zoomTarget.scrollWidth;
+        baseHeight = zoomTarget.scrollHeight;
+        setZoom(zoom);
+      }
+      // 暴露给外部在内容尺寸变化后重置基准
+      window.__resetZoomBase = resetZoomBase;
+      if (zoomWrap){
+        // 初始化缩放到 25%
+        setZoom(zoom);
+        // 使用 Ctrl/⌘/Shift + 滚轮进行缩放，避免影响正常滚动
+        zoomWrap.addEventListener('wheel', (e) => {
+          if (e.ctrlKey || e.metaKey || e.shiftKey){
+            e.preventDefault();
+            const next = zoom + (e.deltaY > 0 ? -STEP : STEP);
+            setZoom(next);
+          }
+        }, { passive:false });
+        // 双击重置缩放
+        zoomWrap.addEventListener('dblclick', () => setZoom(1));
+      }
+    })();
+  </script>
+</body>
+</html>

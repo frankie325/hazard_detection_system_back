@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-label="高速公路危害识别与应急指挥系统标志-六边形">
+  <defs>
+    <linearGradient id="hexGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#22d3ee"/>
+      <stop offset="100%" stop-color="#2563eb"/>
+    </linearGradient>
+    <style>
+      .no-fill { fill: none; }
+      .cap-round { stroke-linecap: round; stroke-linejoin: round; }
+    </style>
+  </defs>
+  <!-- 六边形外框（科技/模块化） -->
+  <polygon points="128,20 216,68 216,168 128,216 40,168 40,68" fill="none" stroke="url(#hexGrad)" stroke-width="10"/>
+  <!-- 电路/连线 -->
+  <path class="no-fill cap-round" d="M 62 80 L 86 92 L 86 120" stroke="#22d3ee" stroke-width="4" opacity="0.8"/>
+  <path class="no-fill cap-round" d="M 194 80 L 170 92 L 170 120" stroke="#22d3ee" stroke-width="4" opacity="0.8"/>
+  <circle cx="86" cy="120" r="4" fill="#22d3ee"/>
+  <circle cx="170" cy="120" r="4" fill="#22d3ee"/>
+  <!-- 道路菱形与虚线 -->
+  <polygon points="128,80 168,120 128,160 88,120" fill="#2563eb" opacity="0.15"/>
+  <path class="no-fill cap-round" d="M 128 72 L 128 168" stroke="#22d3ee" stroke-width="5" stroke-dasharray="12 10"/>
+  <!-- 告警符号（菱形上方） -->
+  <polygon points="128,54 112,82 144,82" fill="#f59e0b"/>
+  <path class="no-fill cap-round" d="M 128 60 L 128 75" stroke="#fff" stroke-width="5"/>
+  <circle cx="128" cy="80" r="3.5" fill="#fff"/>
+</svg>

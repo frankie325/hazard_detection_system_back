@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>应急指挥 · 事件中心</title>
+  <link rel="icon" href="../assets/logo-hrecs-radar.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="../css/styles.css">
+  <script src="../components/app-layout.js"></script>
+  <style>
+    :root { --border:#e5e7eb; --muted:#6b7280; --blue-6:#2F54EB; }
+    body { margin:0; background:#f6f8fc; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,'Noto Sans','PingFang SC','Microsoft YaHei',sans-serif; }
+    .grid { display:grid; grid-template-columns: 340px 1fr; gap:16px; height:100%; }
+    .panel { background:#fff; border:1px solid var(--border); border-radius:10px; padding:12px; display:flex; flex-direction:column; }
+    .panel-header { font-weight:600; color:#1f2937; margin-bottom:8px; }
+    .list { display:flex; flex-direction:column; gap:8px; overflow:auto; }
+    .item { border:1px solid #f0f0f0; border-radius:8px; padding:8px; cursor:pointer; }
+    .item.active { background:#fff9e6; border-color:#ffe58f; }
+    .muted { color:var(--muted); font-size:12px; }
+    .toolbar { display:flex; gap:8px; margin-bottom:8px; }
+    .kpi { display:flex; gap:12px; margin-bottom:8px; }
+    .kpi .box { background:#fafafa; border:1px solid #f0f0f0; border-radius:8px; padding:8px 10px; }
+    .timeline { border-left:2px solid #e5e7eb; padding-left:12px; display:flex; flex-direction:column; gap:8px; }
+    .tl-item { position:relative; }
+    .tl-item::before { content:''; position:absolute; left:-7px; top:4px; width:8px; height:8px; background:#91caff; border-radius:50%; }
+    .res-list { display:flex; flex-direction:column; gap:6px; }
+    .res-chip { display:flex; align-items:center; gap:8px; border:1px solid #f0f0f0; border-radius:20px; padding:6px 10px; }
+    .btns { display:flex; gap:8px; flex-wrap:wrap; }
+    .details-grid { display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:8px; }
+    .detail-item { border:1px solid #f0f0f0; border-radius:8px; padding:8px; background:#fafafa; }
+    .detail-label { color:#4b5563; font-size:12px; margin-bottom:4px; }
+    .detail-value { font-weight:600; color:#1f2937; }
+    /* 新增：右侧面板中部可滚动，底部按钮右对齐 */
+    .panel { min-height:0; }
+    .panel-body { flex:1; overflow:auto; min-height:0; }
+    .panel-footer { display:flex; justify-content:flex-end; gap:8px; padding-top:8px; border-top:1px solid var(--border); margin-top:8px; }
+    /* 等级徽标样式：与告警页面保持一致 */
+    .level-badge { display:inline-block; padding:2px 8px; border-radius:12px; font-size:12px; font-weight:500; }
+    .level-badge.低级 { background:#f6ffed; color:#52c41a; border:1px solid #b7eb8f; }
+    .level-badge.中级 { background:#fff7e6; color:#fa8c16; border:1px solid #ffd591; }
+    .level-badge.高级 { background:#fff2e8; color:#fa541c; border:1px solid #ffbb96; }
+    .level-badge.紧急 { background:#fff1f0; color:#f5222d; border:1px solid #ffa39e; }
+    /* 二次确认弹窗样式 */
+    .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.35); display:none; align-items:center; justify-content:center; z-index:1000; }
+    .modal-overlay.show { display:flex; }
+    .modal { width:520px; max-width:90vw; background:#fff; border:1px solid var(--border); border-radius:10px; box-shadow:0 10px 24px rgba(0,0,0,0.12); }
+    .modal-header { display:flex; align-items:center; justify-content:space-between; padding:10px 12px; border-bottom:1px solid #f0f0f0; font-weight:600; color:#1f2937; }
+    .modal-body { padding:12px; color:#374151; }
+    .modal-footer { display:flex; justify-content:flex-end; gap:8px; padding:10px 12px; border-top:1px solid #f0f0f0; }
+    .modal-close { border:none; background:transparent; cursor:pointer; color:#6b7280; }
+  </style>
+</head>
+<body>
+  <app-layout active="emergency-center" breadcrumb="首页 / 应急指挥 / 事件中心">
+    <div slot="content" class="content-body" style="gap:16px;">
+      <div class="grid">
+        <div class="panel">
+          <div class="panel-header">事件列表</div>
+          <div class="toolbar">
+            <input id="qIncident" class="input" placeholder="搜索事件ID/类型/地点" style="flex:1;">
+          </div>
+          <div id="incidentList" class="list"></div>
+        </div>
+        <div class="panel">
+          <div class="panel-header">事件详情</div>
+          <div class="panel-body">
+            <div id="incidentDetails" class="details-grid"></div>
+            <div class="kpi">
+              <div class="box" id="kpi_resp">响应：--</div>
+              <div class="box" id="kpi_arr">到场：--</div>
+              <div class="box" id="kpi_recov">恢复：--</div>
+            </div>
+            <div class="panel-header">已绑定资源</div>
+            <div id="boundResources" class="res-list" style="margin-bottom:8px;"></div>
+            <div class="panel-header">时间线</div>
+            <div id="timelineBox" class="timeline"></div>
+          </div>
+          <div class="panel-footer">
+            <div class="btns">
+              <button class="btn" onclick="markAck()"><i class="fa-solid fa-check"></i> 确认(ACK)</button>
+              <button class="btn" onclick="gotoBinding()"><i class="fa-solid fa-route"></i> 资源绑定</button>
+              <button class="btn" onclick="markArrival()"><i class="fa-solid fa-truck-fast"></i> 到场</button>
+              <button class="btn" onclick="markClosed()"><i class="fa-solid fa-flag-checkered"></i> 关闭</button>
+              <!-- 将“行动备注”、“上传资料”排到最后 -->
+              <button class="btn" onclick="addNote()"><i class="fa-solid fa-note-sticky"></i> 行动备注</button>
+              <input id="fileInput" type="file" style="display:none;" />
+              <button class="btn" onclick="triggerUpload()"><i class="fa-solid fa-upload"></i> 上传资料</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- 行动备注弹窗（初始放在页面中；运行时将迁移到 body，避免 Shadow DOM 影响叠层） -->
+    <div id="noteModalOverlay" class="modal-overlay" aria-modal="true" role="dialog" style="display:none;">
+      <div class="modal" role="document">
+        <div class="modal-header"><div><i class="fa-solid fa-note-sticky" style="color:#13c2c2;margin-right:8px"></i>行动备注</div><button class="modal-close" onclick="closeNoteModal()" title="关闭"><i class="fa-solid fa-xmark"></i></button></div>
+        <div class="modal-body">
+          <label for="noteInput" class="field-label">备注内容</label>
+          <textarea id="noteInput" class="input" rows="4" placeholder="请输入行动备注..." style="width:100%;"></textarea>
+        </div>
+        <div class="modal-footer">
+          <button class="btn" onclick="closeNoteModal()">取消</button>
+          <button class="btn btn-primary" id="noteModalOkBtn" onclick="submitNoteModal()" disabled><i class="fa-solid fa-check"></i> 保存</button>
+        </div>
+      </div>
+    </div>
+    <!-- 二次确认弹窗（通用） -->
+    <div id="confirmModalOverlay" class="modal-overlay" aria-modal="true" role="dialog">
+      <div class="modal" role="document">
+        <div class="modal-header"><div id="confirmModalTitle"><i class="fa-solid fa-triangle-exclamation" style="color:#fa8c16;margin-right:8px"></i>确认操作</div><button class="modal-close" onclick="closeConfirmModal()" title="关闭"><i class="fa-solid fa-xmark"></i></button></div>
+        <div class="modal-body"><div id="confirmModalText">确认操作</div></div>
+        <div class="modal-footer">
+          <button class="btn" onclick="closeConfirmModal()">取消</button>
+          <button class="btn btn-primary" id="confirmModalOkBtn"><i class="fa-solid fa-check"></i> 确认</button>
+        </div>
+      </div>
+    </div>
+  </app-layout>
+
+  <script>
+    const storeKey = 'incidentStore';
+    function now(){ return new Date().toISOString().replace('T',' ').slice(0,16); }
+    function fmt(ms){ const m=Math.round(ms/60000); if(m<1)return `${Math.round(ms/1000)}s`; if(m<60)return `${m}min`; const h=Math.floor(m/60),rm=m%60; return `${h}h${rm?` ${rm}min`:''}`; }
+    function loadStore(){ try{ return JSON.parse(localStorage.getItem(storeKey)||'{}'); }catch(e){ return {}; } }
+    function saveStore(data){ localStorage.setItem(storeKey, JSON.stringify(data)); }
+    function seed(){ const s=loadStore(); if(s.incidents&&s.incidents.length) return; const incidents=[
+      // 启动：仅创建，无确认/绑定/到场
+      { id:'INC-20251102-001', type:'隧道火灾', level:'II级', location:'隧道A-出口', createdAt:'2025-11-02 08:33', status:'open', timeline:[
+        {at:'2025-11-02 08:33', type:'created', text:'事件创建'}
+      ], resources:[] },
+      // 已确认：有确认，无绑定/到场
+      { id:'INC-20251102-002', type:'路面塌陷', level:'III级', location:'路段C-中段', createdAt:'2025-11-02 09:55', status:'open', timeline:[
+        {at:'2025-11-02 09:55', type:'created', text:'事件创建'},
+        {at:'2025-11-02 10:05', type:'ack', text:'事件已确认'}
+      ], resources:[] },
+      // 调度中：已确认 + 资源绑定，无到场
+      { id:'INC-20251102-003', type:'危险化学品泄漏', level:'II级', location:'匝道B-入口', createdAt:'2025-11-02 10:20', status:'open', timeline:[
+        {at:'2025-11-02 10:20', type:'created', text:'事件创建'},
+        {at:'2025-11-02 10:25', type:'ack', text:'事件已确认'},
+        {at:'2025-11-02 10:30', type:'resource_bind', text:'绑定资源 清障车-01', route:{from:'站点X', to:'匝道B-入口'}}
+      ], resources:[
+        { resourceId:'CAR-01', type:'material', name:'清障车-01', boundAt:'2025-11-02 10:30', note:'近端调度', route:{from:'站点X', to:'匝道B-入口'} }
+      ] },
+      // 处理中：已确认 + 资源绑定 + 到场
+      { id:'INC-20251102-004', type:'隧道碰撞', level:'III级', location:'隧道C-中段', createdAt:'2025-11-02 10:40', status:'open', timeline:[
+        {at:'2025-11-02 10:40', type:'created', text:'事件创建'},
+        {at:'2025-11-02 10:45', type:'ack', text:'事件已确认'},
+        {at:'2025-11-02 10:50', type:'resource_bind', text:'绑定资源 巡逻民警-02', route:{from:'警务站Y', to:'隧道C-中段'}},
+        {at:'2025-11-02 11:20', type:'arrival', text:'现场到场', loc:'隧道C-中段'}
+      ], resources:[
+        { resourceId:'P-02', type:'person', name:'巡逻民警-02', boundAt:'2025-11-02 10:50', note:'快速响应', route:{from:'警务站Y', to:'隧道C-中段'} }
+      ] },
+      // 已关闭：完整闭环
+      { id:'INC-20251102-005', type:'车辆自燃', level:'II级', location:'服务区A-出口', createdAt:'2025-11-02 08:00', status:'open', timeline:[
+        {at:'2025-11-02 08:00', type:'created', text:'事件创建'},
+        {at:'2025-11-02 08:05', type:'ack', text:'事件已确认'},
+        {at:'2025-11-02 08:10', type:'resource_bind', text:'绑定资源 消防车-03', route:{from:'消防站Z', to:'服务区A-出口'}},
+        {at:'2025-11-02 08:35', type:'arrival', text:'现场到场', loc:'服务区A-出口'},
+        {at:'2025-11-02 09:20', type:'closed', text:'事件关闭'}
+      ], resources:[
+        { resourceId:'FIRE-03', type:'material', name:'消防车-03', boundAt:'2025-11-02 08:10', note:'近端出动', route:{from:'消防站Z', to:'服务区A-出口'} }
+      ] }
+    ]; saveStore({ incidents }); }
+    seed();
+    // 规范化时间线类型：resource_bound -> resource_bind；移除 resource_unbound
+    (function normalizeStore(){ const s=loadStore(); if(!s || !s.incidents) return; s.incidents = s.incidents.map(i=>{
+      const tl = (i.timeline||[])
+        .map(t=> ({ ...t, type: t.type==='resource_bound' ? 'resource_bind' : t.type }))
+        .filter(t=> t.type !== 'resource_unbound');
+      return { ...i, timeline: tl };
+    }); saveStore(s); })();
+
+    const state = { q:'', activeId:null };
+    // 等级映射：与告警一致，并兼容 I/II/III 级
+    const levelMap = { L1:'低级', L2:'中级', L3:'高级', L4:'紧急', L5:'紧急', 'I级':'低级', 'II级':'中级', 'III级':'高级', 'IV级':'紧急', 'V级':'紧急', '低级':'低级', '中级':'中级', '高级':'高级', '紧急':'紧急' };
+    function normalizeLevel(level){ return levelMap[level] || level || '-'; }
+    function parseTime(s){ try{ return s? new Date(s): null; }catch(e){ return null; } }
+    function maxTime(a,b){ if(!a) return b||null; if(!b) return a||null; return a>b? a:b; }
+    function computeStatus(i){
+      if(!i) return '未开始';
+      const closed = (i.timeline||[]).filter(t=>t.type==='closed').map(t=>parseTime(t.at)).reduce(maxTime,null);
+      if(closed) return '已关闭';
+      const ack = (i.timeline||[]).filter(t=>t.type==='ack').map(t=>parseTime(t.at)).reduce(maxTime,null);
+      const arrival = (i.timeline||[]).filter(t=>t.type==='arrival').map(t=>parseTime(t.at)).reduce(maxTime,null);
+      const bindByRes = (i.resources||[]).map(r=>parseTime(r.boundAt)).reduce(maxTime,null);
+      const bindByTl = (i.timeline||[]).filter(t=>['binding','bind','resource_bind','resource_update','dispatch'].includes(t.type)).map(t=>parseTime(t.at)).reduce(maxTime,null);
+      const bind = maxTime(bindByRes, bindByTl);
+      // 取最近发生的里程碑事件类型
+      const marks = [];
+      if(ack) marks.push({ t:ack, s:'已确认' });
+      if(bind) marks.push({ t:bind, s:'调度中' });
+      if(arrival) marks.push({ t:arrival, s:'处理中' });
+      if(marks.length===0) return '未开始';
+      marks.sort((a,b)=>a.t-b.t);
+      return marks[marks.length-1].s;
+    }
+    // 通用二次确认弹窗逻辑
+    let __confirmOk = null;
+    function ensureConfirmModal(){
+      let overlay = document.getElementById('confirmModalOverlay');
+      if(!overlay){
+        overlay = document.createElement('div');
+        overlay.id = 'confirmModalOverlay';
+        overlay.className = 'modal-overlay';
+        overlay.innerHTML = `
+          <div class="modal" role="document">
+            <div class="modal-header"><div id="confirmModalTitle"><i class="fa-solid fa-triangle-exclamation" style="color:#fa8c16;margin-right:8px"></i>确认操作</div><button class="modal-close" onclick="closeConfirmModal()" title="关闭"><i class="fa-solid fa-xmark"></i></button></div>
+            <div class="modal-body"><div id="confirmModalText">确认操作</div></div>
+            <div class="modal-footer">
+              <button class="btn" onclick="closeConfirmModal()">取消</button>
+              <button class="btn btn-primary" id="confirmModalOkBtn"><i class="fa-solid fa-check"></i> 确认</button>
+            </div>
+          </div>`;
+        document.body.appendChild(overlay);
+        initConfirmModal();
+      } else {
+        // 若弹窗存在但不在 body（例如位于 app-layout 的 slot 内），迁移到 body，避免 Shadow DOM 叠层影响显示
+        if (overlay.parentElement !== document.body) {
+          document.body.appendChild(overlay);
+          initConfirmModal();
+        }
+      }
+    }
+    function showConfirmModal(text, ok){ ensureConfirmModal(); const el=document.getElementById('confirmModalOverlay'); const t=document.getElementById('confirmModalText'); if(t) t.textContent=text; __confirmOk = typeof ok==='function' ? ok : null; el.classList.add('show'); el.style.display = 'flex'; }
+    function closeConfirmModal(){ const el=document.getElementById('confirmModalOverlay'); if(el){ el.classList.remove('show'); el.style.display='none'; } __confirmOk=null; }
+    function initConfirmModal(){
+      const okBtn = document.getElementById('confirmModalOkBtn');
+      const overlay = document.getElementById('confirmModalOverlay');
+      if (okBtn) {
+        okBtn.onclick = ()=>{ const cb=__confirmOk; closeConfirmModal(); if(cb) cb(); };
+      }
+      if (overlay) {
+        overlay.addEventListener('click',(e)=>{ if(e.target===overlay) closeConfirmModal(); });
+      }
+      document.addEventListener('keydown',(e)=>{ if(e.key==='Escape') closeConfirmModal(); });
+    }
+    // 初始化弹窗事件绑定（若 DOM 已存在）
+    initConfirmModal();
+    // 若现有数据缺少某些状态，自动补齐演示数据（不影响已有条目）
+    (function ensureDemoData(){ const s=loadStore(); if(!s||!s.incidents) return; const have=new Set(s.incidents.map(i=>computeStatus(i))); function add(i){ s.incidents.push(i); }
+      if(!have.has('未开始')) add({ id:'INC-DEMO-START', type:'护栏损坏', level:'I级', location:'K135-右侧', createdAt:now(), status:'open', timeline:[{at:now(), type:'created', text:'事件创建'}], resources:[] });
+      if(!have.has('已确认')) add({ id:'INC-DEMO-ACK', type:'落石', level:'II级', location:'桥梁B-段', createdAt:now(), status:'open', timeline:[{at:now(), type:'created', text:'事件创建'},{at:now(), type:'ack', text:'事件已确认'}], resources:[] });
+      if(!have.has('调度中')) add({ id:'INC-DEMO-DISPATCH', type:'大货车侧翻', level:'III级', location:'匝道C-口', createdAt:now(), status:'open', timeline:[{at:now(), type:'created', text:'事件创建'},{at:now(), type:'ack', text:'事件已确认'},{at:now(), type:'resource_bind', text:'绑定资源 清障车-09', route:{from:'站点H', to:'匝道C-口'}}], resources:[{ resourceId:'CAR-09', type:'material', name:'清障车-09', boundAt:now(), note:'近端调度', route:{from:'站点H', to:'匝道C-口'} }] });
+      if(!have.has('处理中')) add({ id:'INC-DEMO-PROC', type:'油污泄漏', level:'II级', location:'路段E-上行', createdAt:now(), status:'open', timeline:[{at:now(), type:'created', text:'事件创建'},{at:now(), type:'ack', text:'事件已确认'},{at:now(), type:'arrival', text:'现场到场'}], resources:[] });
+      if(!have.has('已关闭')) add({ id:'INC-DEMO-CLOSED', type:'边坡坍塌', level:'III级', location:'K88-K92', createdAt:now(), status:'open', timeline:[{at:now(), type:'created', text:'事件创建'},{at:now(), type:'ack', text:'事件已确认'},{at:now(), type:'closed', text:'事件关闭'}], resources:[] });
+      saveStore(s); })();
+    function typeText(type){
+      const map = {
+        created:'事件创建',
+        ack:'确认',
+        arrival:'到场签到',
+        closed:'关闭',
+        action_note:'行动备注',
+        attachment:'上传资料',
+        binding:'资源绑定',
+        bind:'资源绑定',
+        resource_bind:'资源绑定',
+        resource_update:'资源更新',
+        dispatch:'调度'
+      };
+      return map[type] || type;
+    }
+    function getIncidents(){ return loadStore().incidents||[]; }
+    function setIncidents(list){ const s=loadStore(); s.incidents=list; saveStore(s); }
+    function currentIncident(){ return getIncidents().find(i=>i.id===state.activeId)||null; }
+
+    function renderList(){ const box=document.getElementById('incidentList'); box.innerHTML=''; const rows=getIncidents().filter(i=>{
+      const q=state.q.trim(); if(!q) return true; return `${i.id}${i.type}${i.location}`.includes(q);
+    }); rows.forEach(i=>{ const div=document.createElement('div'); div.className='item'+(i.id===state.activeId?' active':'');
+      const statusText = computeStatus(i); const lvl = normalizeLevel(i.level);
+      div.innerHTML=`<div><strong>${i.type}</strong> <span class="level-badge ${lvl}">${lvl}</span></div><div class='muted'>${i.id} · ${i.location} · 创建：${i.createdAt} · 状态：${statusText}</div>`;
+      div.addEventListener('click', ()=>{ state.activeId=i.id; renderDetail(); renderList(); }); box.appendChild(div);
+    }); if(!state.activeId && rows[0]) { state.activeId=rows[0].id; renderDetail(); renderList(); }
+    }
+
+    function renderDetail(){ const i=currentIncident(); const details=document.getElementById('incidentDetails'); const tl=document.getElementById('timelineBox'); const res=document.getElementById('boundResources');
+      if(!i){ if(details) details.innerHTML='<div class="muted">请选择事件</div>'; tl.innerHTML=''; res.innerHTML=''; return; }
+      if(details){
+        const rows = [
+          { label:'事件ID', value:i.id },
+          { label:'类型', value:i.type },
+          { label:'等级', value:`<span class=\"level-badge ${normalizeLevel(i.level)}\">${normalizeLevel(i.level)}</span>` },
+          { label:'地点', value:i.location },
+          { label:'创建时间', value:i.createdAt },
+          { label:'状态', value:computeStatus(i) }
+        ];
+        details.innerHTML = rows.map(r=>`<div class='detail-item'><div class='detail-label'>${r.label}</div><div class='detail-value'>${r.value||'-'}</div></div>`).join('');
+      }
+      // KPI
+      const open=i.timeline.find(t=>t.type==='created')?.at; const ack=i.timeline.find(t=>t.type==='ack')?.at; const arr=i.timeline.find(t=>t.type==='arrival')?.at; const closed=i.timeline.find(t=>t.type==='closed')?.at;
+      document.getElementById('kpi_resp').textContent='响应：'+(ack&&open?fmt(new Date(ack)-new Date(open)):'--');
+      document.getElementById('kpi_arr').textContent='到场：'+(arr&&ack?fmt(new Date(arr)-new Date(ack)):'--');
+      document.getElementById('kpi_recov').textContent='恢复：'+(closed&&arr?fmt(new Date(closed)-new Date(arr)):'--');
+      // 资源
+      res.innerHTML=''; i.resources.forEach(r=>{ const chip=document.createElement('div'); chip.className='res-chip'; chip.innerHTML=`<i class="fa-solid ${r.type==='person'?'fa-user':'fa-microchip'}"></i><span>${r.name}</span><span class='muted'>绑定：${r.boundAt}</span>`; res.appendChild(chip); });
+      // 时间线
+      tl.innerHTML=''; const entries = i.timeline
+        .slice()
+        .filter(t=>!['unbinding','unbind','resource_unbind','unbind_resource','resource_unbound'].includes(t.type))
+        .sort((a,b)=>a.at.localeCompare(b.at));
+      entries.forEach(t=>{ const row=document.createElement('div'); row.className='tl-item';
+        row.innerHTML=`<div><strong>${t.at}</strong> · ${typeText(t.type)}</div><div class='muted'>${t.text||''}${t.loc?` · 位置：${t.loc}`:''}${t.route?` · 路线：${t.route.from||''} → ${t.route.to||''}`:''}</div>`; tl.appendChild(row);
+      });
+    }
+
+    function updateIncident(mutator){ const list=getIncidents(); const idx=list.findIndex(x=>x.id===state.activeId); if(idx<0) return; mutator(list[idx]); setIncidents(list); renderDetail(); }
+    function markAck(){ showConfirmModal('确认启动该应急事件吗', ()=>{ updateIncident(i=>{ i.status='ack'; i.timeline.push({ at:now(), type:'ack', text:'事件已确认' }); }); }); }
+    function markArrival(){ showConfirmModal('确认标记到场吗？', ()=>{ updateIncident(i=>{ i.status='arrival'; const loc=prompt('请输入到场位置描述(可选)',''); const ev={ at:now(), type:'arrival', text:'现场到场' }; if(loc) ev.loc=loc; i.timeline.push(ev); }); }); }
+    function markClosed(){ showConfirmModal('确认关闭该应急事件吗？', ()=>{ updateIncident(i=>{ i.status='closed'; i.timeline.push({ at:now(), type:'closed', text:'事件关闭' }); }); }); }
+    // 行动备注：使用弹窗填写（确保弹窗在 body 下，以避开 AppLayout 的 Shadow DOM 叠层）
+    function ensureNoteModal(){ let overlay=document.getElementById('noteModalOverlay');
+      if(!overlay){
+        overlay=document.createElement('div');
+        overlay.id='noteModalOverlay';
+        overlay.className='modal-overlay';
+        overlay.style.display='none';
+        overlay.innerHTML=`
+          <div class="modal" role="document">
+            <div class="modal-header"><div><i class="fa-solid fa-note-sticky" style="color:#13c2c2;margin-right:8px"></i>行动备注</div><button class="modal-close" onclick="closeNoteModal()" title="关闭"><i class="fa-solid fa-xmark"></i></button></div>
+            <div class="modal-body">
+              <label for="noteInput" class="field-label">备注内容</label>
+              <textarea id="noteInput" class="input" rows="4" placeholder="请输入行动备注..." style="width:100%;"></textarea>
+            </div>
+            <div class="modal-footer">
+              <button class="btn" onclick="closeNoteModal()">取消</button>
+              <button class="btn btn-primary" id="noteModalOkBtn" onclick="submitNoteModal()" disabled><i class="fa-solid fa-check"></i> 保存</button>
+            </div>
+          </div>`;
+        document.body.appendChild(overlay);
+        initNoteModal();
+      } else {
+        if (overlay.parentElement !== document.body) {
+          document.body.appendChild(overlay);
+          initNoteModal();
+        }
+      }
+    }
+    function showNoteModal(){ ensureNoteModal(); const overlay=document.getElementById('noteModalOverlay'); const input=document.getElementById('noteInput'); const ok=document.getElementById('noteModalOkBtn'); if(input) input.value=''; if(ok) ok.disabled=true; if(overlay){ overlay.classList.add('show'); overlay.style.display='flex'; setTimeout(()=>{ input && input.focus(); }, 0); } }
+    function closeNoteModal(){ const overlay=document.getElementById('noteModalOverlay'); if(overlay){ overlay.classList.remove('show'); overlay.style.display='none'; } }
+    function submitNoteModal(){ const input=document.getElementById('noteInput'); const note=(input && input.value || '').trim(); if(!note) return; updateIncident(i=>{ i.timeline.push({ at:now(), type:'action_note', text:note }); }); closeNoteModal(); }
+    function initNoteModal(){ const overlay=document.getElementById('noteModalOverlay'); const input=document.getElementById('noteInput'); const ok=document.getElementById('noteModalOkBtn'); if(input){ const sync=()=>{ if(ok) ok.disabled = !(input.value.trim()); }; input.addEventListener('input', sync); sync(); }
+      if(overlay){ overlay.addEventListener('click',(e)=>{ if(e.target===overlay) closeNoteModal(); }); }
+      if(!window.__noteModalKeydownBound){ document.addEventListener('keydown',(e)=>{ if(e.key==='Escape') closeNoteModal(); }); window.__noteModalKeydownBound=true; }
+    }
+    initNoteModal();
+    function addNote(){ showNoteModal(); }
+    function gotoBinding(){ const id=state.activeId; if(!id) return; location.href = 'emergency-dispatch.html#incidentId='+encodeURIComponent(id); }
+    function triggerUpload(){ const input=document.getElementById('fileInput'); input.value=''; input.onchange=()=>{
+      const file=input.files&&input.files[0]; if(!file) return; updateIncident(i=>{ i.timeline.push({ at:now(), type:'attachment', text:`上传资料：${file.name} (${Math.round(file.size/1024)} KB)` }); }); };
+      input.click();
+    }
+
+    document.getElementById('qIncident').addEventListener('input', (e)=>{ state.q=e.target.value; renderList(); });
+    renderList();
+  </script>
+</body>
+</html>

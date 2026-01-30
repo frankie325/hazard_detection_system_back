@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>系统管理 · 设备管理</title>
+  <link rel="icon" href="../assets/logo-hrecs-radar.svg" type="image/svg+xml">
+  <script src="../components/app-layout.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    :root { --blue-6:#2F54EB; --blue-5:#3B6AE8; --bg-body:#f6f8fc; --bg-card:#fff; --border:#e5e7eb; --text:#374151; --muted:#6b7280; --radius:12px; --shadow:0 10px 30px rgba(37,99,235,.12); }
+    html, body { height:100%; } body { margin:0; background:var(--bg-body); font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,'Noto Sans','PingFang SC','Microsoft YaHei',sans-serif; }
+    .app { min-height:100vh; display:grid; grid-template-columns:240px 1fr; }
+    .sider { background:var(--bg-card); border-right:1px solid var(--border); padding:18px 16px; }
+    .sider-header { display:flex; align-items:center; gap:10px; padding:8px 10px; }
+    .logo { width:32px; height:32px; border-radius:50%; background:linear-gradient(135deg,var(--blue-6),#5C85F5); display:flex; align-items:center; justify-content:center; color:#fff; font-weight:700; }
+    .title { font-weight:600; color:#1f2937; }
+    .menu-list { list-style:none; margin:16px 0 0; padding:0; }
+    .menu-item { display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:10px; cursor:pointer; color:#374151; }
+    .menu-item:hover { background:#f0f5ff; }
+    .menu-item.active { background:#e6f0ff; color:var(--blue-6); }
+
+    .main { height:100vh; display:grid; grid-template-rows:64px 1fr; }
+    .header { background:var(--bg-card); border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; padding:0 16px; }
+    .breadcrumb { display:flex; align-items:center; gap:8px; font-size:14px; color:#374151; }
+    .breadcrumb a { color:rgba(0,0,0,.85); text-decoration:none; }
+    .breadcrumb a:hover { color:var(--blue-6); }
+
+    .content { padding:0; height:100%; box-sizing:border-box; }
+    .two-col { height:100%; display:grid; grid-template-columns:300px 1fr; gap:16px; }
+
+    .panel { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); display:flex; flex-direction:column; }
+    .panel-header { padding:12px 14px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
+    .panel-body { padding:12px; overflow:auto; }
+
+    /* 左侧：区域树 */
+    .search { display:flex; gap:8px; }
+    .input, .select { height:32px; border-radius:6px; border:1px solid #d9d9d9; background:#fff; padding:0 10px; font-size:14px; }
+    .btn { height:32px; padding:0 12px; border-radius:6px; border:1px solid #d9d9d9; background:#fff; cursor:pointer; }
+.btn-primary { background:var(--blue-6); border-color:var(--blue-6); color:#fff; }
+.btn-danger { background:#ff4d4f; border-color:#ff4d4f; color:#fff; }
+.btn-danger:hover { background:#f5222d; border-color:#f5222d; }
+    .btn[disabled] { opacity:.5; cursor:not-allowed; }
+
+    .tree { list-style:none; margin:0; padding:0; }
+    .tree li { list-style:none; }
+    .tree-node { display:flex; align-items:center; gap:8px; padding:6px 8px; border-radius:8px; cursor:pointer; color:var(--text); }
+    .tree-node:hover { background:#f5f7ff; }
+    .tree-node.active { background:#e6f0ff; color:var(--blue-6); }
+    .caret { width:18px; text-align:center; color:#8c8c8c; }
+    .children { margin-left:16px; border-left:2px dashed #eef2ff; padding-left:8px; }
+
+    /* 右侧：设备表格 */
+    .toolbar { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px; border-bottom:1px solid var(--border); }
+    .toolbar .left { display:flex; align-items:center; gap:12px; }
+    .table-wrap { flex:1; overflow:auto; }
+    table { width:100%; border-collapse:separate; border-spacing:0; }
+    thead th { background:#fafafa; font-weight:500; font-size:14px; color:rgba(0,0,0,.88); padding:10px 12px; border-bottom:1px solid #f0f0f0; text-align:left; }
+    tbody td { padding:10px 12px; border-bottom:1px solid #f0f0f0; color:rgba(0,0,0,.88); }
+    .op-btns { display:flex; align-items:center; gap:8px; }
+    .check-col { width: 48px; }
+    .pagination { padding:12px; display:flex; align-items:center; justify-content:center; gap:8px; }
+
+    /* 弹窗 */
+    .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.35); display:none; align-items:center; justify-content:center; z-index:1000; }
+    .modal-overlay.show { display:flex; }
+    .modal { width:640px; max-width:96vw; background:#fff; border:1px solid var(--border); border-radius:12px; box-shadow:var(--shadow); }
+    .modal-header { padding:10px 12px; border-bottom:1px solid #f0f0f0; display:flex; align-items:center; justify-content:space-between; }
+    .modal-close { width:28px; height:28px; border-radius:50%; border:0; background:transparent; color:#666; display:flex; align-items:center; justify-content:center; cursor:pointer; }
+    .modal-close:hover { background:#f5f5f5; }
+    .modal-close:active { background:#eee; }
+    .modal-body { padding:12px; }
+    .modal-footer { display:flex; justify-content:flex-end; gap:8px; padding:8px 12px; border-top:1px solid #f0f0f0; }
+    .form-row { display:flex; gap:12px; margin-bottom:12px; }
+    .form-item { flex:1; display:flex; flex-direction:column; gap:6px; }
+    .form-item label { font-size:13px; color:#666; }
+  </style>
+</head>
+<body>
+  <app-layout active="devices" breadcrumb="系统管理 / 设备管理">
+    <section slot="content" class="content">
+      <div class="two-col">
+        <!-- 左侧：区域树 -->
+        <div class="panel">
+          <div class="panel-header">
+            <div class="search"><input id="regionSearch" class="input" placeholder="搜索区域..." /></div>
+            <button class="btn" id="btnToggleExpand">折叠全部</button>
+          </div>
+          <div class="panel-body">
+            <ul id="regionTree" class="tree"></ul>
+          </div>
+        </div>
+
+        <!-- 右侧：设备列表 -->
+        <div class="panel">
+          <div class="toolbar">
+            <div class="left">
+              <div style="font-size:12px;color:var(--muted);">设备名称</div>
+              <input id="searchName" class="input" placeholder="请输入设备名称" />
+              <div style="font-size:12px;color:var(--muted);">设备编码</div>
+              <input id="searchCode" class="input" placeholder="请输入设备编码" />
+              <button class="btn" id="btnSearch"><i class="fa-solid fa-search"></i> 搜索</button>
+              <button class="btn" id="btnReset"><i class="fa-solid fa-rotate-left"></i> 重置</button>
+            </div>
+            <div class="right">
+              <button id="btnAdd" class="btn btn-primary" disabled><i class="fa-solid fa-plus"></i> 添加设备</button>
+              <button id="btnDelete" class="btn btn-danger"><i class="fa-solid fa-trash"></i> 删除</button>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th class="check-col"><input type="checkbox" id="selectAllDevices" /></th>
+                  <th>设备名称</th>
+                  <th>设备编码</th>
+                  <th>类型</th>
+                  <th>型号</th>
+                  <th>所属区域</th>
+                  <th>安装位置</th>
+                  <th>IP地址</th>
+                  <th>状态</th>
+                  <th style="width:120px;">操作</th>
+                </tr>
+              </thead>
+              <tbody id="deviceTbody"></tbody>
+            </table>
+          </div>
+          <div class="pagination">
+            <button class="btn" id="prevPage">上一页</button>
+            <div id="pageNumbers" style="display:flex;gap:8px"></div>
+            <button class="btn" id="nextPage">下一页</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 新建设备弹窗 -->
+    <div slot="content" id="addDeviceModalOverlay" class="modal-overlay">
+      <div class="modal">
+        <div class="modal-header"><span>新建设备</span><button class="modal-close" id="btnCloseModal" title="关闭"><i class="fa-solid fa-xmark"></i></button></div>
+        <div class="modal-body">
+          <div class="form-row"><div class="form-item"><label>设备名称<span style="color:#f5222d;">*</span></label><input id="devNameInput" class="input" placeholder="如：隧道摄像头A-01" required aria-required="true" /></div></div>
+          <div class="form-row"><div class="form-item"><label>设备编码<span style="color:#f5222d;">*</span></label><input id="devCodeInput" class="input" placeholder="如：CAM-A-01" /></div></div>
+          <div class="form-row">
+            <div class="form-item"><label>设备类型</label><select id="devTypeInput" class="select"></select></div>
+            <div class="form-item"><label>设备型号</label><input id="devModelInput" class="input" placeholder="如：Hikvision DS-2CD3T45" /></div>
+          </div>
+          <div class="form-row"><div class="form-item"><label>安装位置</label><input id="devLocationInput" class="input" placeholder="如：隧道入口左侧护栏" /></div></div>
+          <div class="form-row">
+            <div class="form-item"><label>IP地址</label><input id="devIpInput" class="input" placeholder="如：192.168.1.10" /></div>
+          </div>
+        </div>
+        <div class="modal-footer"><button class="btn" id="btnSaveDev">保存</button></div>
+      </div>
+    </div>
+
+    <!-- 编辑设备弹窗 -->
+    <div slot="content" id="editDeviceModalOverlay" class="modal-overlay">
+      <div class="modal">
+        <div class="modal-header"><span>编辑设备</span><button class="modal-close" id="btnCloseEditModal" title="关闭"><i class="fa-solid fa-xmark"></i></button></div>
+        <div class="modal-body">
+          <div class="form-row"><div class="form-item"><label>设备名称<span style="color:#f5222d;">*</span></label><input id="editDevNameInput" class="input" placeholder="如：隧道摄像头A-01" required aria-required="true" /></div></div>
+          <div class="form-row"><div class="form-item"><label>设备编码<span style="color:#f5222d;">*</span></label><input id="editDevCodeInput" class="input" placeholder="如：CAM-A-01" /></div></div>
+          <div class="form-row">
+            <div class="form-item"><label>设备类型</label><select id="editDevTypeInput" class="select"></select></div>
+            <div class="form-item"><label>设备型号</label><input id="editDevModelInput" class="input" placeholder="如：Hikvision DS-2CD3T45" /></div>
+          </div>
+          <div class="form-row"><div class="form-item"><label>安装位置</label><input id="editDevLocationInput" class="input" placeholder="如：隧道入口左侧护栏" /></div></div>
+          <div class="form-row">
+            <div class="form-item"><label>IP地址</label><input id="editDevIpInput" class="input" placeholder="如：192.168.1.10" /></div>
+          </div>
+        </div>
+        <div class="modal-footer"><button class="btn btn-primary" id="btnUpdateDev">保存</button></div>
+      </div>
+    </div>
+  </app-layout>
+
+  <!-- 自定义确认弹窗 -->
+  <div id="confirmOverlay" class="modal-overlay" aria-modal="true" role="dialog">
+    <div class="modal" role="document">
+      <div class="modal-header"><span>确认删除</span></div>
+      <div class="modal-body"><div id="confirmMessage">确定要执行删除操作吗？删除后不可恢复！</div></div>
+      <div class="modal-footer">
+        <button class="btn" id="confirmCancelBtn">取消</button>
+        <button class="btn btn-primary" id="confirmOkBtn">确定</button>
+      </div>
+    </div>
+  </div>
+
+
+  <script>
+    // 示例区域数据（隧道/路段/车道层级）
+    const regions = [
+      { id:'g1', name:'G1 京哈高速', children:[
+        { id:'g1-a', name:'隧道A', children:[ { id:'g1-a-1', name:'A-1断面' }, { id:'g1-a-2', name:'A-2断面' } ] },
+        { id:'g1-b', name:'路段B', children:[ { id:'g1-b-1', name:'B-1断面' } ] }
+      ]},
+      { id:'g4', name:'G4 京港澳高速', children:[ { id:'g4-c', name:'隧道C' }, { id:'g4-d', name:'路段D' } ] }
+    ];
+
+    // 设备类型与示例设备（增加 regionId 字段）
+    const deviceTypes = ['摄像头','雷达','气象站','诱导屏','服务器'];
+    let devices = [
+      { id:1, code:'CAM-A-01', name:'隧道摄像头A-01', type:'摄像头', model:'Hikvision DS-2CD3T45', regionId:'g1-a', location:'隧道A入口左侧护栏', ip:'192.168.1.10', status:'在线' },
+      { id:2, code:'RAD-B-12', name:'桥梁雷达B-12', type:'雷达', model:'Navtech RPS-97', regionId:'g1-b', location:'路段B 桥面中央', ip:'192.168.2.12', status:'维护' },
+      { id:3, code:'MET-C-05', name:'路段气象站C-05', type:'气象站', model:'Vaisala WXT536', regionId:'g4-d', location:'隧道C外右侧紧急车道', ip:'10.0.0.55', status:'在线' },
+      { id:4, code:'LED-D-02', name:'诱导屏D-02', type:'诱导屏', model:'LED-X120', regionId:'g4-d', location:'分流口', ip:'172.16.0.22', status:'离线' },
+      { id:5, code:'SRV-E-01', name:'边缘服务器E-1', type:'服务器', model:'Dell R740', regionId:'g1', location:'服务区机房', ip:'192.168.100.5', status:'在线' },
+      { id:6, code:'CAM-A-02', name:'隧道摄像头A-02', type:'摄像头', model:'Hikvision DS-2CD3T45', regionId:'g1-a-1', location:'A-1断面左侧护栏', ip:'192.168.1.11', status:'在线' }
+    ];
+    const selectedDeviceIds = new Set();
+
+    // 状态
+    let current = { regionId:null, page:1, pageSize:6, filtered:[], expandAll:true };
+
+    // 渲染区域树
+    function renderTree() {
+      const tree = document.getElementById('regionTree');
+      const keyword = document.getElementById('regionSearch').value.trim();
+      tree.innerHTML = '';
+      regions.forEach(node => tree.appendChild(renderNode(node, keyword)));
+    }
+    function matchKeyword(text, kw) { return !kw || text.includes(kw); }
+    function renderNode(node, kw) {
+      const li = document.createElement('li');
+      const visible = matchKeyword(node.name, kw) || (node.children||[]).some(ch => matchKeyword(ch.name, kw));
+      if (!visible && kw) { li.style.display = 'none'; }
+      const row = document.createElement('div'); row.className = 'tree-node' + (current.regionId===node.id?' active':'');
+      const expanded = kw ? true : current.expandAll;
+      const caret = document.createElement('span'); caret.className = 'caret'; caret.textContent = node.children? (expanded ? '▾' : '▸') : '·';
+      const label = document.createElement('span'); label.textContent = node.name;
+      row.appendChild(caret); row.appendChild(label);
+      row.onclick = () => { current.regionId = node.id; document.getElementById('btnAdd').disabled = false; applyFilter(); renderTree(); };
+      li.appendChild(row);
+      if (node.children && node.children.length) {
+        const ul = document.createElement('ul'); ul.className = 'children';
+        if (!expanded) ul.style.display = 'none';
+        node.children.forEach(ch => ul.appendChild(renderNode(ch, kw)));
+        li.appendChild(ul);
+      }
+      return li;
+    }
+
+    // 设备过滤与表格渲染
+    function applyFilter() {
+      const name = document.getElementById('searchName').value.trim();
+      const code = (document.getElementById('searchCode')?.value || '').trim();
+      let data = devices.slice();
+      if (current.regionId) { data = data.filter(d => d.regionId === current.regionId || d.regionId?.startsWith(current.regionId)); }
+      if (name) { data = data.filter(d => d.name.includes(name)); }
+      if (code) { data = data.filter(d => (d.code||'').includes(code)); }
+      current.filtered = data; current.page = 1; renderTable(); renderPagination();
+    }
+
+    function renderTable() {
+      const tbody = document.getElementById('deviceTbody'); tbody.innerHTML = '';
+      const start = (current.page-1)*current.pageSize, end = start + current.pageSize;
+      const pageData = current.filtered.slice(start, end);
+      if (!current.regionId) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td colspan="10" style="color:#888">请在左侧选择区域以查看设备</td>`;
+        tbody.appendChild(tr); return;
+      }
+      if (pageData.length === 0) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td colspan="10" style="color:#888">该区域暂无设备</td>`;
+        tbody.appendChild(tr); return;
+      }
+        pageData.forEach(item => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+          <td class=\"check-col\"><input type=\"checkbox\" class=\"row-select\" data-id=\"${item.id}\" ${selectedDeviceIds.has(item.id) ? 'checked' : ''}></td>
+          <td>${item.name}</td>
+          <td>${item.code || '-'}</td>
+          <td>${item.type}</td>
+          <td>${item.model}</td>
+          <td>${displayRegion(item.regionId)}</td>
+          <td>${item.location}</td>
+          <td>${item.ip}</td>
+          <td>${item.status}</td>
+          <td>
+            <div class=\"op-btns\"> 
+              <button class=\"btn\" title=\"编辑\" onclick=\"editDevice(${item.id})\"><i class=\"fa-solid fa-edit\"></i></button>
+            <button class=\"btn btn-danger\" title=\"删除\" onclick=\"deleteDevice(${item.id})\"><i class=\"fa-solid fa-trash\"></i></button>
+            </div>
+          </td>`;
+          tbody.appendChild(tr);
+        });
+
+      Array.from(tbody.querySelectorAll('.row-select')).forEach(cb => {
+        cb.addEventListener('change', function() {
+          const id = parseInt(this.dataset.id, 10);
+          if (this.checked) selectedDeviceIds.add(id); else selectedDeviceIds.delete(id);
+          updateSelectAllDevicesState();
+        });
+      });
+
+      updateSelectAllDevicesState();
+    }
+
+    function displayRegion(id) {
+      const map = {};
+      (function collect(list){ list.forEach(n=>{ map[n.id]=n.name; if(n.children) collect(n.children); }); })(regions);
+      return map[id] || '-';
+    }
+
+    function renderPagination() {
+      const container = document.getElementById('pageNumbers'); container.innerHTML='';
+      const totalPages = Math.max(1, Math.ceil(current.filtered.length / current.pageSize));
+      for (let i=1;i<=totalPages;i++) {
+        const btn = document.createElement('button'); btn.className='btn' + (i===current.page?' btn-primary':''); btn.textContent=String(i);
+        btn.onclick = () => { current.page=i; renderTable(); };
+        container.appendChild(btn);
+      }
+      document.getElementById('prevPage').onclick = () => { if (current.page>1) { current.page--; renderTable(); } };
+      document.getElementById('nextPage').onclick = () => {
+        if (current.page < Math.max(1, Math.ceil(current.filtered.length / current.pageSize))) { current.page++; renderTable(); }
+      };
+    }
+
+    // 添加/删除设备
+    function showAddDeviceModal() { document.getElementById('addDeviceModalOverlay').classList.add('show'); }
+    function closeAddDeviceModal() { document.getElementById('addDeviceModalOverlay').classList.remove('show'); }
+    function saveDevice() {
+      if (!current.regionId) { alert('请先选择左侧区域'); return; }
+      const name = document.getElementById('devNameInput').value.trim();
+      const code = document.getElementById('devCodeInput').value.trim();
+      const type = document.getElementById('devTypeInput').value;
+      const model = document.getElementById('devModelInput').value.trim();
+      const location = document.getElementById('devLocationInput').value.trim();
+      const ip = document.getElementById('devIpInput').value.trim();
+      const status = '在线'; // 弹窗移除状态字段，新建设备默认状态为“在线”
+      if (!name || !code || !type || !ip) { alert('请填写设备名称、设备编码、类型和IP地址'); return; }
+      const id = devices.length ? Math.max(...devices.map(d => d.id)) + 1 : 1;
+      devices.unshift({ id, code, name, type, model, regionId: current.regionId, location, ip, status });
+      applyFilter(); closeAddDeviceModal();
+    }
+    function updateSelectAllDevicesState() {
+      const allCb = document.getElementById('selectAllDevices');
+      if (!allCb) return;
+      const checkboxes = document.querySelectorAll('#deviceTbody .row-select');
+      const total = checkboxes.length;
+      const checked = Array.from(checkboxes).filter(cb => cb.checked).length;
+      allCb.indeterminate = (checked > 0 && checked < total);
+      allCb.checked = (total > 0 && checked === total);
+    }
+    let editingDeviceId = null;
+    function editDevice(id) {
+      const dev = devices.find(d => d.id === id);
+      if (!dev) { alert('未找到该设备'); return; }
+      editingDeviceId = id;
+      // 填充内容
+      document.getElementById('editDevNameInput').value = dev.name || '';
+      document.getElementById('editDevCodeInput').value = dev.code || '';
+      // 填充类型下拉
+      const typeSel = document.getElementById('editDevTypeInput');
+      typeSel.innerHTML = '';
+      deviceTypes.forEach(t => { const opt=document.createElement('option'); opt.value=t; opt.textContent=t; typeSel.appendChild(opt); });
+      typeSel.value = dev.type || deviceTypes[0];
+      document.getElementById('editDevModelInput').value = dev.model || '';
+      document.getElementById('editDevLocationInput').value = dev.location || '';
+      document.getElementById('editDevIpInput').value = dev.ip || '';
+      document.getElementById('editDeviceModalOverlay').classList.add('show');
+    }
+    function closeEditDeviceModal(){ document.getElementById('editDeviceModalOverlay').classList.remove('show'); editingDeviceId = null; }
+    function updateDevice(){
+      if (editingDeviceId == null) return;
+      const name = document.getElementById('editDevNameInput').value.trim();
+      const code = document.getElementById('editDevCodeInput').value.trim();
+      const type = document.getElementById('editDevTypeInput').value;
+      const model = document.getElementById('editDevModelInput').value.trim();
+      const location = document.getElementById('editDevLocationInput').value.trim();
+      const ip = document.getElementById('editDevIpInput').value.trim();
+      const missing = [];
+      if (!name) missing.push('设备名称');
+      if (!code) missing.push('设备编码');
+      if (!type) missing.push('设备类型');
+      if (!ip) missing.push('IP地址');
+      if (missing.length){
+        if (window.Message && Message.warning) { Message.warning('请完善必填项：' + missing.join('、'), 3); }
+        else { alert('请完善必填项：' + missing.join('、')); }
+        return;
+      }
+      const idx = devices.findIndex(d => d.id === editingDeviceId);
+      if (idx === -1) { alert('更新失败：未找到设备'); return; }
+      const regionId = devices[idx].regionId; // 保留归属区域
+      const oldStatus = devices[idx].status; // 弹窗移除状态字段，编辑时保留原状态
+      devices[idx] = { id: editingDeviceId, code, name, type, model, regionId, location, ip, status: oldStatus };
+      applyFilter(); closeEditDeviceModal();
+    }
+    function deleteDevice(id) {
+      showConfirm('确认删除该设备吗？删除后不可恢复！', () => {
+        devices = devices.filter(d => d.id !== id);
+        selectedDeviceIds.delete(id);
+        applyFilter();
+      });
+    }
+
+    function deleteSelectedDevices(){
+      if (selectedDeviceIds.size === 0) {
+        if (window.Message && Message.warning) { Message.warning('请选择需要删除的数据！', 2); }
+        else { alert('请选择需要删除的数据！'); }
+        return;
+      }
+      showConfirm('确定删除选中设备吗？删除后不可恢复！', () => {
+        devices = devices.filter(d => !selectedDeviceIds.has(d.id));
+        selectedDeviceIds.clear();
+        applyFilter();
+      });
+    }
+
+    function showConfirm(message, onConfirm) {
+      const overlay = document.getElementById('confirmOverlay');
+      const msgEl = document.getElementById('confirmMessage');
+      const okBtn = document.getElementById('confirmOkBtn');
+      const cancelBtn = document.getElementById('confirmCancelBtn');
+      msgEl.textContent = message;
+      overlay.classList.add('show');
+      const cleanup = () => { overlay.classList.remove('show'); okBtn.onclick = null; cancelBtn.onclick = null; };
+      cancelBtn.onclick = cleanup;
+      okBtn.onclick = () => { cleanup(); try { onConfirm && onConfirm(); } catch (e) { console.error(e); } };
+    }
+
+    // 初始化
+    function init() {
+      // 设备类型填充
+      const devTypeInput = document.getElementById('devTypeInput'); deviceTypes.forEach(t=>{ const opt=document.createElement('option'); opt.value=t; opt.textContent=t; devTypeInput.appendChild(opt); });
+      // 事件绑定
+      document.getElementById('regionSearch').addEventListener('input', renderTree);
+      document.getElementById('btnToggleExpand').onclick = function(){
+        current.expandAll = !current.expandAll;
+        this.textContent = current.expandAll ? '折叠全部' : '展开全部';
+        renderTree();
+      };
+      // 移除清除按钮逻辑，仅保留搜索框
+      // document.getElementById('btnClearSearch').onclick = () => { document.getElementById('regionSearch').value=''; renderTree(); };
+      document.getElementById('btnAdd').onclick = () => { if (!current.regionId) return; showAddDeviceModal(); };
+      document.getElementById('btnCloseModal').onclick = closeAddDeviceModal;
+      document.getElementById('btnSaveDev').onclick = saveDevice;
+      document.getElementById('btnSearch').onclick = applyFilter;
+      document.getElementById('btnReset').onclick = () => { document.getElementById('searchName').value=''; const sc=document.getElementById('searchCode'); if(sc) sc.value=''; applyFilter(); };
+      document.getElementById('btnDelete').onclick = deleteSelectedDevices;
+      document.getElementById('btnCloseEditModal').onclick = closeEditDeviceModal;
+      document.getElementById('btnUpdateDev').onclick = updateDevice;
+      // 初始渲染
+      renderTree(); applyFilter();
+    }
+    document.addEventListener('DOMContentLoaded', function() {
+      // 初始化页面（渲染左侧区域树与右侧表格/分页）
+      init();
+      const allCb = document.getElementById('selectAllDevices');
+      if (allCb) {
+        allCb.addEventListener('change', function() {
+          const checkboxes = document.querySelectorAll('#deviceTbody .row-select');
+          Array.from(checkboxes).forEach(cb => {
+            cb.checked = allCb.checked;
+            const id = parseInt(cb.dataset.id, 10);
+            if (allCb.checked) selectedDeviceIds.add(id); else selectedDeviceIds.delete(id);
+          });
+          updateSelectAllDevicesState();
+        });
+      }
+    });
+  </script>
+</body>
+</html>

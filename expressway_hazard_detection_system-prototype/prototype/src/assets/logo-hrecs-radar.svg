@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-label="高速公路危害识别与应急指挥系统标志-雷达">
+  <defs>
+    <radialGradient id="radarGrad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#0ea5e9"/>
+      <stop offset="100%" stop-color="#1e3a8a"/>
+    </radialGradient>
+    <style>
+      .no-fill { fill: none; }
+      .cap-round { stroke-linecap: round; stroke-linejoin: round; }
+    </style>
+  </defs>
+  <!-- 雷达底盘 -->
+  <circle cx="128" cy="128" r="104" fill="none" stroke="url(#radarGrad)" stroke-width="10"/>
+  <!-- 雷达同心圆 -->
+  <circle cx="128" cy="128" r="84" fill="none" stroke="#0ea5e9" stroke-width="2" opacity="0.7"/>
+  <circle cx="128" cy="128" r="64" fill="none" stroke="#0ea5e9" stroke-width="2" opacity="0.5"/>
+  <circle cx="128" cy="128" r="44" fill="none" stroke="#0ea5e9" stroke-width="2" opacity="0.4"/>
+  <!-- 扫描扇形 -->
+  <path d="M128,128 L128,34 A94,94 0 0 1 214,120 Z" fill="#22d3ee" opacity="0.12"/>
+  <!-- 高速公路中线与边线 -->
+  <path class="no-fill cap-round" d="M 98 44 L 68 212" stroke="#2563eb" stroke-width="6"/>
+  <path class="no-fill cap-round" d="M 158 44 L 188 212" stroke="#2563eb" stroke-width="6"/>
+  <path class="no-fill cap-round" d="M 128 60 L 128 196" stroke="#22d3ee" stroke-width="5" stroke-dasharray="12 10"/>
+  <!-- 应急十字标记 -->
+  <path class="no-fill cap-round" d="M 128 108 L 128 136 M 114 122 L 142 122" stroke="#f59e0b" stroke-width="5"/>
+</svg>

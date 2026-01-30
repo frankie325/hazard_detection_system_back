@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>危险告警 · 告警详情</title>
+  <link rel="icon" href="../assets/logo-hrecs-radar.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <script src="../components/app-layout.js"></script>
+  <style>
+    :root { --blue-6:#2F54EB; --bg-body:#f6f8fc; --bg-card:#fff; --border:#e5e7eb; --shadow:0 10px 30px rgba(37,99,235,.12); }
+    html, body { height:100%; } body { margin:0; background:var(--bg-body); font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,'Noto Sans','PingFang SC','Microsoft YaHei',sans-serif; }
+    .card { background:var(--bg-card); border:1px solid var(--border); border-radius:16px; box-shadow:var(--shadow); height:100%; display:flex; flex-direction:column; }
+    .toolbar { display:flex; align-items:center; justify-content:space-between; padding:16px; border-bottom:1px solid var(--border); }
+    .toolbar .left { display:flex; align-items:center; gap:12px; }
+    .toolbar .right { display:flex; align-items:center; gap:12px; }
+    .btn { height:32px; padding:0 15px; border-radius:6px; border:1px solid #d9d9d9; background:#fff; cursor:pointer; }
+    .btn-primary { background:var(--blue-6); border-color:var(--blue-6); color:#fff; }
+    .content-wrap { display:grid; grid-template-columns: 1.2fr 1fr; gap:16px; padding:16px; height: calc(100vh - 64px); box-sizing:border-box; }
+    @media (max-width: 1024px) { .content-wrap { grid-template-columns: 1fr; height:auto; } }
+    .section { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:14px; overflow:auto; }
+    .section h3 { margin:0 0 10px; font-size:16px; color:#334155; }
+    .kv { display:flex; gap:8px; padding:6px 0; font-size:13px; color:#374151; }
+    .kv .k { width:120px; flex:0 0 120px; color:#6b7280; }
+    .kv .v { flex:1; }
+    .level-badge { display:inline-block; padding:2px 8px; border-radius:12px; font-size:12px; font-weight:500; }
+    .level-badge.低级 { background:#f6ffed; color:#52c41a; border:1px solid #b7eb8f; }
+    .level-badge.中级 { background:#fff7e6; color:#fa8c16; border:1px solid #ffd591; }
+    .level-badge.高级 { background:#fff2e8; color:#fa541c; border:1px solid #ffbb96; }
+    .level-badge.紧急 { background:#fff1f0; color:#f5222d; border:1px solid #ffa39e; }
+    .status { font-size:12px; padding:2px 8px; border-radius:12px; }
+    .status.open { background:#fff7f0; color:#fa8c16; border:1px solid #ffd591; }
+    .status.processing { background:#e6f4ff; color:#1677ff; border:1px solid #91caff; }
+    .status.closed { background:#f6ffed; color:#52c41a; border:1px solid #b7eb8f; }
+    .timeline { display:flex; flex-direction:column; gap:10px; }
+    .tl-item { display:flex; gap:10px; border-top:1px dashed #eee; padding-top:8px; }
+    .tl-item:first-child { border-top:none; padding-top:0; }
+    .tl-time { width:140px; color:#64748b; }
+    .tl-content { flex:1; color:#374151; }
+    .att-chip { display:inline-flex; align-items:center; gap:6px; padding:2px 8px; border:1px solid #e5e7eb; border-radius:12px; background:#f9fafb; color:#334155; text-decoration:none; font-size:12px; }
+    .att-chip:hover { background:#eef2f7; border-color:#d1d5db; }
+  </style>
+ </head>
+ <body>
+   <!-- 详情页也包裹在系统骨架中，但不需要侧边菜单项 -->
+   <app-layout active="alert-messages" breadcrumb="危险告警 / 告警消息 / 告警详情">
+     <section slot="content" class="content">
+       <div class="card">
+         <div class="toolbar">
+           <div class="left">
+             <button class="btn" id="btnBack"><i class="fa-solid fa-arrow-left"></i>&nbsp;返回</button>
+             <div id="titleBar" style="display:flex;align-items:center;gap:8px;color:#1f2937;font-weight:600;"></div>
+           </div>
+           <div class="right">
+             <button class="btn" id="btnExport"><i class="fa-solid fa-upload"></i>&nbsp;导出JSON</button>
+             <button class="btn btn-primary" id="btnConfirm"><i class="fa-solid fa-clipboard-check"></i>&nbsp;确认</button>
+             <button class="btn" id="btnClose"><i class="fa-solid fa-circle-xmark"></i>&nbsp;关闭</button>
+           </div>
+         </div>
+         <div class="content-wrap">
+           <div class="section" id="overview">
+             <h3>基础信息</h3>
+             <div id="kvWrap"></div>
+           </div>
+           <div class="section" id="lifecycle">
+             <h3>流程时间线</h3>
+             <div class="timeline" id="timeline"></div>
+           </div>
+         </div>
+       </div>
+     </section>
+   </app-layout>
+
+   <script>
+     const storeKey = 'alert_messages_v1';
+     const levelMap = { L1:'低级', L2:'中级', L3:'高级', L4:'紧急', L5:'紧急', '低级':'低级', '中级':'中级', '高级':'高级', '紧急':'紧急' };
+
+     function getQuery(name){ const url = new URL(window.location.href); return url.searchParams.get(name); }
+     let messages = JSON.parse(localStorage.getItem(storeKey) || '[]');
+     let m = null;
+
+     function render(){
+       const titleBar = document.getElementById('titleBar');
+       if (!m){ titleBar.textContent = '未找到该告警'; return; }
+      titleBar.innerHTML = `<i class="fa-solid fa-bell"></i><span>${m.name}</span>
+        <span class="level-badge ${levelMap[m.level]||m.level}">${levelMap[m.level]||m.level}</span>
+        <span style="color:#64748b;font-size:12px;">发生时间：${new Date(m.occurredAt).toLocaleString()}</span>`;
+
+       const kv = [
+         ['告警名称', m.name],
+         ['告警等级', levelMap[m.level]||m.level],
+         ['危害类型', m.category],
+         ['发生设备', m.device],
+         ['地点', m.location],
+         ['规则', m.ruleId],
+         ['状态', `<span class="status ${m.status}">${m.status==='open'?'开启':m.status==='processing'?'处理中':'已关闭'}</span>`],
+         ['处理结果', m.result||'-'],
+         ['确认人/时间', (m.ackBy||'-') + ' / ' + (m.ackAt? new Date(m.ackAt).toLocaleString() : '-')],
+         // 去除处理人字段，根据需求不再展示
+         ['关闭时间', m.closedAt? new Date(m.closedAt).toLocaleString() : '-'],
+         ['关闭原因', m.closeReason? (m.closeReason.type+(m.closeReason.note? '（'+m.closeReason.note+'）':'')) : '-'],
+         ['附件', (Array.isArray(m.attachments) && m.attachments.length)
+            ? m.attachments.map(a => `<a class="att-chip" href="${a.url||'#'}" target="_blank"><i class="fa-solid fa-paperclip"></i>${a.name||a.filename||'附件'}</a>`).join(' ')
+            : '-']
+       ];
+       const kvWrap = document.getElementById('kvWrap'); kvWrap.innerHTML = '';
+       kv.forEach(([k,v]) => { const row = document.createElement('div'); row.className = 'kv'; row.innerHTML = `<div class="k">${k}</div><div class="v">${v}</div>`; kvWrap.appendChild(row); });
+
+       const tl = document.getElementById('timeline'); tl.innerHTML = '';
+       const nodes = [];
+       nodes.push({ t:m.occurredAt, label:'发生', desc:`${m.category} · 设备 ${m.device} · 地点 ${m.location}` });
+       if (m.ackAt) nodes.push({ t:m.ackAt, label:'已确认', desc:`确认人 ${m.ackBy||'-'}` });
+      // 处理进展节点去除处理人信息
+      if (m.handledAt) nodes.push({ t:m.handledAt, label:'处理进展', desc:`进展更新` });
+       if (m.closedAt) nodes.push({ t:m.closedAt, label:'已关闭', desc:`原因 ${m.closeReason? m.closeReason.type : '-'}；结果 ${m.result||'-'}` });
+       nodes.sort((a,b)=> new Date(a.t) - new Date(b.t));
+       nodes.forEach(n => { const item = document.createElement('div'); item.className='tl-item'; item.innerHTML = `<div class='tl-time'>${new Date(n.t).toLocaleString()}</div><div class='tl-content'><strong>${n.label}</strong><div style='margin-top:4px;color:#64748b;'>${n.desc}</div></div>`; tl.appendChild(item); });
+     }
+
+     function saveStore(){ localStorage.setItem(storeKey, JSON.stringify(messages)); }
+     function confirmAlert(){ if (!m) return; const idx = messages.findIndex(x=>x.id===m.id); if (idx<0) return; messages[idx].status='processing'; messages[idx].ackBy='dispatcher-01'; messages[idx].ackAt=new Date().toISOString(); saveStore(); m = messages[idx]; render(); }
+     function closeAlert(){ if (!m) return; const idx = messages.findIndex(x=>x.id===m.id); if (idx<0) return; const reason = prompt('请选择关闭原因：误报/已修复/不需处理/其他', '已修复'); const note = reason ? prompt('备注（可选）', '') : ''; messages[idx].status='closed'; messages[idx].closedAt=new Date().toISOString(); messages[idx].closeReason = reason ? { type: reason, note } : { type:'其他', note }; messages[idx].result = messages[idx].result || '—'; saveStore(); m = messages[idx]; render(); }
+     function exportJson(){ if (!m) return; const blob = new Blob([JSON.stringify(m,null,2)],{type:'application/json'}); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href=url; a.download=`${m.id}.json`; a.click(); URL.revokeObjectURL(url); }
+
+     function init(){
+       const id = getQuery('id');
+       if (id){ m = messages.find(x => x.id === id) || null; }
+       render();
+       document.getElementById('btnBack').addEventListener('click', () => { window.location.href = 'alert-messages.html'; });
+       document.getElementById('btnExport').addEventListener('click', exportJson);
+       document.getElementById('btnConfirm').addEventListener('click', confirmAlert);
+       document.getElementById('btnClose').addEventListener('click', closeAlert);
+     }
+     document.addEventListener('DOMContentLoaded', init);
+   </script>
+ </body>
+ </html>

@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>检测模块 · 告警规则配置</title>
+  <link rel="icon" href="../assets/logo-hrecs-radar.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <script src="../components/app-layout.js"></script>
+  <style>
+    :root { --blue-6:#2F54EB; --blue-5:#3B6AE8; --bg-body:#f6f8fc; --bg-card:#fff; --border:#e5e7eb; --radius-lg:16px; --shadow:0 10px 30px rgba(37,99,235,.12); }
+    html, body { height:100%; } body { margin:0; background:var(--bg-body); font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,'Noto Sans','PingFang SC','Microsoft YaHei',sans-serif; }
+    .app { min-height:100vh; display:grid; grid-template-columns:240px 1fr; }
+    .sider { background:var(--bg-card); border-right:1px solid var(--border); padding:18px 16px; }
+    .sider-header { display:flex; align-items:center; gap:10px; padding:8px 10px; }
+    .logo { width:32px; height:32px; border-radius:50%; background:linear-gradient(135deg,var(--blue-6),#5C85F5); display:flex; align-items:center; justify-content:center; color:#fff; font-weight:700; }
+    .title { font-weight:600; color:#1f2937; }
+    .menu-list { list-style:none; margin:16px 0 0; padding:0; }
+    .menu-item { display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:10px; cursor:pointer; color:#374151; }
+    .menu-item:hover { background:#f0f5ff; }
+    .menu-item.active { background:#e6f0ff; color:var(--blue-6); }
+    .main { height:100vh; display:grid; grid-template-rows:64px 1fr; }
+    .header { background:var(--bg-card); border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; padding:0 16px; }
+    .breadcrumb { display:flex; align-items:center; gap:8px; font-size:14px; color:#374151; }
+    .content { padding:0; height:100%; box-sizing:border-box; }
+    .card { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-lg); box-shadow:var(--shadow); height:100%; display:flex; flex-direction:column; }
+    .toolbar { display:flex; align-items:center; justify-content:space-between; padding:16px; border-bottom:1px solid var(--border); }
+    .toolbar .left { display:flex; align-items:center; gap:12px; }
+    .select, .input { height:32px; line-height:32px; border-radius:6px; padding:4px 11px; border:1px solid #d9d9d9; background:#fff; font-size:14px; box-sizing:border-box; }
+    .btn { height:32px; padding:0 15px; border-radius:6px; border:1px solid #d9d9d9; background:#fff; cursor:pointer; }
+    .btn-primary { background:var(--blue-6); border-color:var(--blue-6); color:#fff; }
+    .btn-danger { background:#ef4444; border-color:#ef4444; color:#fff; }
+    .btn-danger:hover { background:#ff4d4f; border-color:#ff4d4f; }
+    .table-wrap { flex:1; overflow:auto; }
+    table { width:max-content; min-width:100%; border-collapse:separate; border-spacing:0; }
+    thead th { background:#fafafa; font-weight:500; font-size:14px; color:rgba(0,0,0,.88); padding:12px 16px; border-bottom:1px solid #f0f0f0; text-align:left; white-space: nowrap; }
+    /* 列宽设置：表头不换行，内容可换行 */
+    /* 列宽重新映射（移除规则ID列后）：
+       1: 选择框, 2: 规则名称, 3: 危害类型, 4: 关联设备/区域, 5: 匹配条件（JSON）, 6: 告警等级,
+       7: 是否启用, 8: 创建时间, 9: 操作
+    */
+    thead th:nth-child(1), tbody td:nth-child(1) { width:48px; }
+    thead th:nth-child(2), tbody td:nth-child(2) { width:160px; }
+    thead th:nth-child(3), tbody td:nth-child(3) { width:140px; }
+    thead th:nth-child(4), tbody td:nth-child(4) { width:180px; }
+    thead th:nth-child(5), tbody td:nth-child(5) { width:280px; }
+    thead th:nth-child(6), tbody td:nth-child(6) { width:120px; }
+    thead th:nth-child(7), tbody td:nth-child(7) { width:120px; }
+    thead th:nth-child(8), tbody td:nth-child(8) { width:160px; }
+    thead th:nth-child(9), tbody td:nth-child(9) { width:200px; }
+    /* 正文可换行（尤其JSON列） */
+    tbody td { white-space: normal; }
+    /* JSON列换行（移除规则ID后，JSON为第5列） */
+    tbody td:nth-child(5) { word-break: break-all; }
+    tbody td { padding:12px 16px; border-bottom:1px solid #f0f0f0; color:rgba(0,0,0,.88); }
+    .op-btns { display:flex; align-items:center; gap:8px; }
+    /* 图标按钮与悬浮提示 */
+    .icon-btn { width:32px; height:32px; display:inline-flex; align-items:center; justify-content:center; border:1px solid #d9d9d9; border-radius:6px; background:#fff; color:#333; cursor:pointer; position:relative; z-index:2; }
+    .icon-btn:hover { background:#f0f5ff; color:var(--blue-6); border-color:#adc6ff; }
+    .icon-btn i { pointer-events:none; }
+    .icon-btn::after { content: attr(data-title); position:absolute; top:100%; left:50%; transform: translateX(-50%); white-space:nowrap; background: rgba(0,0,0,.75); color:#fff; font-size:12px; padding:4px 8px; border-radius:4px; margin-top:6px; opacity:0; pointer-events:none; transition: opacity .2s; }
+    .icon-btn:hover::after { opacity:1; }
+    .pagination { padding:12px 16px; display:flex; align-items:center; justify-content:center; gap:8px; }
+    .drawer { position:fixed; right:0; top:0; width:640px; max-width:96vw; height:100vh; background:#fff; border-left:1px solid var(--border); box-shadow:var(--shadow); display:none; flex-direction:column; z-index:1000; }
+    .drawer.show { display:flex; }
+    .drawer-header { padding:12px 16px; border-bottom:1px solid #f0f0f0; display:flex; align-items:center; justify-content:space-between; }
+    .drawer-body { padding:16px; overflow:auto; }
+    .form-group { margin-bottom:12px; }
+    .form-group label { display:block; margin-bottom:6px; font-size:14px; color:#333; }
+    .required-star { color:#f5222d; margin-left:4px; }
+    .toolbar .form-group.inline { display:flex; align-items:center; gap:8px; margin-right:12px; margin-bottom:0; }
+    .toolbar .form-group.inline label { display:inline-block; margin:0 6px 0 0; white-space:nowrap; }
+    .toolbar .form-group.inline .input, .toolbar .form-group.inline .select { height:32px; line-height:32px; }
+    .level-badge { display:inline-block; padding:2px 8px; border-radius:12px; font-size:12px; font-weight:500; }
+    .level-badge.低级 { background:#f6ffed; color:#52c41a; border:1px solid #b7eb8f; }
+    .level-badge.中级 { background:#fff7e6; color:#fa8c16; border:1px solid #ffd591; }
+    .level-badge.高级 { background:#fff2e8; color:#fa541c; border:1px solid #ffbb96; }
+    .level-badge.紧急 { background:#fff1f0; color:#f5222d; border:1px solid #ffa39e; }
+    select[multiple] { min-height:80px; padding:8px; }
+    select[multiple] option { padding:4px 8px; margin:2px 0; }
+    select[multiple] option:checked { background:#e6f0ff; color:var(--blue-6); }
+    textarea.json { width:100%; min-height:140px; padding:10px; border:1px solid #e5e7eb; border-radius:8px; font-family:ui-monospace, Menlo, Monaco, 'Courier New', monospace; font-size:13px; }
+    .test-box { background:#fafafa; border:1px solid #f0f0f0; border-radius:8px; padding:12px; }
+  .icon-btn.danger { background:#fff1f0; border-color:#ffa39e; color:#d4380d; }
+  .icon-btn.danger:hover { background:#ff4d4f; border-color:#ff4d4f; color:#fff; }
+</style>
+</head>
+<body>
+  <app-layout active="detection-rules" breadcrumb="危险告警 / 告警规则配置">
+    <section slot="content" class="content">
+      <div class="card">
+        <div class="toolbar">
+          <div class="left">
+            <div class="form-group inline"><label>名称</label><input id="filterName" class="input" placeholder="请输入名称" /></div>
+             <div class="form-group inline"><label>危害类型</label><select id="filterType" class="select"><option value="">全部</option><option value="抛洒物">抛洒物</option><option value="塌方">塌方</option><option value="火灾">火灾</option><option value="交通事故">交通事故</option></select></div>
+             <div class="form-group inline"><label>等级</label><select id="filterLevel" class="select"><option value="">全部</option><option value="低级">低级</option><option value="中级">中级</option><option value="高级">高级</option><option value="紧急">紧急</option></select></div>
+             <div class="form-group inline" style="gap:8px;">
+               <button class="btn" id="btnSearch"><i class="fa-solid fa-search"></i> 搜索</button>
+               <button class="btn" id="btnReset"><i class="fa-solid fa-rotate-left"></i> 重置</button>
+             </div>
+          </div>
+          <div class="right">
+            <button id="btnNew" class="btn btn-primary"><i class="fa-solid fa-plus"></i> 新增规则</button>
+            <button id="btnExport" class="btn"><i class="fa-solid fa-upload"></i> 导出JSON</button>
+            <button id="btnImport" class="btn"><i class="fa-solid fa-download"></i> 导入JSON</button>
+            <button id="btnDelete" class="btn btn-danger"><i class="fa-solid fa-trash"></i> 删除</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:48px"><input type="checkbox" id="selectAll"></th>
+                <th>规则名称</th><th>危害类型</th><th>关联设备/区域</th><th>匹配条件（JSON）</th><th>告警等级</th><th>是否启用</th><th>创建时间</th><th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="tbody"></tbody>
+          </table>
+        </div>
+        <div class="pagination">
+          <button id="prevPage" class="btn">上一页</button>
+          <div id="pageNumbers" style="display:flex;gap:8px"></div>
+          <button id="nextPage" class="btn">下一页</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 抽屉：新建/编辑规则 -->
+    <div slot="content" id="drawer" class="drawer">
+      <div class="drawer-header">
+        <div id="drawerTitle">新建规则</div>
+        <div>
+          <button id="btnSave" class="btn btn-primary">保存</button>
+          <button id="btnClose" class="btn">关闭</button>
+        </div>
+      </div>
+      <div class="drawer-body">
+        <div class="form-group"><label>规则名称<span class="required-star" aria-hidden="true">*</span></label><input id="f_name" class="input" placeholder="例如：隧道火灾-温烟联合" required aria-required="true" /></div>
+        <div class="form-group">
+          <label>危害类型<span class="required-star" aria-hidden="true">*</span></label>
+          <select id="f_type" class="select" required aria-required="true"><option>抛洒物</option><option>塌方</option><option>火灾</option><option>交通事故</option></select>
+        </div>
+        <div class="form-group">
+          <label>关联设备/区域<span class="required-star" aria-hidden="true">*</span></label>
+          <select id="f_assoc" class="select" multiple size="10" required aria-required="true">
+            <optgroup label="区域：隧道A">
+              <option value="隧道A">区域：隧道A（整个区域）</option>
+              <option value="隧道A|CAM-01">设备：CAM-01</option>
+              <option value="隧道A|CAM-02">设备：CAM-02</option>
+              <option value="隧道A|SENS-01">设备：SENS-01</option>
+            </optgroup>
+            <optgroup label="区域：隧道B">
+              <option value="隧道B">区域：隧道B（整个区域）</option>
+              <option value="隧道B|CAM-03">设备：CAM-03</option>
+              <option value="隧道B|CAM-04">设备：CAM-04</option>
+              <option value="隧道B|SENS-02">设备：SENS-02</option>
+            </optgroup>
+            <optgroup label="区域：匝道C">
+              <option value="匝道C">区域：匝道C（整个区域）</option>
+              <option value="匝道C|CAM-05">设备：CAM-05</option>
+              <option value="匝道C|DVR-01">设备：DVR-01</option>
+            </optgroup>
+            <optgroup label="区域：桥梁D">
+              <option value="桥梁D">区域：桥梁D（整个区域）</option>
+              <option value="桥梁D|CAM-06">设备：CAM-06</option>
+              <option value="桥梁D|SENS-03">设备：SENS-03</option>
+            </optgroup>
+            <optgroup label="区域：主线E">
+              <option value="主线E">区域：主线E（整个区域）</option>
+              <option value="主线E|CAM-07">设备：CAM-07</option>
+              <option value="主线E|CAM-08">设备：CAM-08</option>
+            </optgroup>
+            <optgroup label="区域：控制室F">
+              <option value="控制室F">区域：控制室F（整个区域）</option>
+              <option value="控制室F|NVR-01">设备：NVR-01</option>
+              <option value="控制室F|SENS-CTRL-01">设备：SENS-CTRL-01</option>
+            </optgroup>
+          </select>
+        </div>
+        <div class="form-group"><label>匹配条件（JSON）<span class="required-star" aria-hidden="true">*</span></label><textarea id="f_conditions" class="json" placeholder='{"mode":"AND","items":[{"field":"confidence","op":">=","value":0.8}]}' required aria-required="true"></textarea></div>
+        <div class="form-group">
+          <label>告警等级<span class="required-star" aria-hidden="true">*</span></label>
+          <select id="f_level" class="select" required aria-required="true"><option value="低级">低级</option><option value="中级">中级</option><option value="高级">高级</option><option value="紧急">紧急</option></select>
+        </div>
+        <div class="form-group">
+          <label>是否启用<span class="required-star" aria-hidden="true">*</span></label>
+          <select id="f_enabled" class="select" required aria-required="true"><option value="true" selected>启用</option><option value="false">停用</option></select>
+        </div>
+      </div>
+    </div>
+  </app-layout>
+
+  <!-- 自定义确认弹窗 -->
+  <div id="confirmOverlay" class="drawer" style="display:none; position:fixed; inset:0; background: rgba(0,0,0,.45); align-items:center; justify-content:center;">
+    <div class="modal" role="dialog" aria-modal="true" style="background:#fff; border-radius:8px; width:560px; max-width:90vw; overflow:hidden; box-shadow:0 4px 12px rgba(0,0,0,.15);">
+      <div class="drawer-header"><div>确认删除</div></div>
+      <div class="drawer-body"><div id="confirmMessage">确定要执行删除操作吗？删除后不可恢复！</div></div>
+      <div class="drawer-header" style="justify-content:flex-end; gap:8px; border-top:1px solid #f0f0f0;">
+        <button class="btn" id="confirmCancelBtn">取消</button>
+        <button class="btn btn-primary" id="confirmOkBtn">确定</button>
+      </div>
+    </div>
+  </div>
+
+
+  <script>
+    const levelMap = { L1:'低级', L2:'中级', L3:'高级', L4:'紧急', L5:'紧急', '低级':'低级', '中级':'中级', '高级':'高级', '紧急':'紧急' };
+    const hazardTypes = ['抛洒物','塌方','火灾','交通事故'];
+    const storeKey = 'alert_rules_v1';
+    let rules = JSON.parse(localStorage.getItem(storeKey) || '[]');
+    let current = { page:1, pageSize:8, filtered:[...rules], editing:null };
+const selectedIds = new Set();
+
+    function safeJson(text, fallback) { try { return JSON.parse(text); } catch { return fallback; } }
+    // 简化显示：关联设备/区域与条件 JSON
+    function formatAssoc(assoc) {
+      const fmt = (v) => {
+        if (!v) return '-';
+        return v.includes('|') ? v.split('|').join(' / ') : v;
+      };
+      if (Array.isArray(assoc)) return assoc.map(fmt).join(', ');
+      return assoc ? fmt(assoc) : '-';
+    }
+    function briefJson(obj) { try { const s = JSON.stringify(obj); return s.length > 100 ? s.slice(0, 100) + '...' : s; } catch { return '-'; } }
+
+    function applyFilter() {
+      const name = document.getElementById('filterName').value.trim();
+      const type = document.getElementById('filterType').value;
+      const level = document.getElementById('filterLevel').value;
+      let data = [...rules];
+      if (name) data = data.filter(r => (r.name || '').includes(name));
+      if (type) data = data.filter(r => r.type === type);
+      if (level) data = data.filter(r => (levelMap[r.level] || r.level) === level);
+      current.filtered = data; current.page = 1; renderTable();
+    }
+    function resetFilter(){
+      const n=document.getElementById('filterName'); if(n) n.value='';
+      const t=document.getElementById('filterType'); if(t) t.value='';
+      const l=document.getElementById('filterLevel'); if(l) l.value='';
+      applyFilter();
+    }
+
+    function renderTable() {
+      const start = (current.page-1)*current.pageSize, end = start + current.pageSize;
+      const pageData = current.filtered.slice(start, end);
+      const tbody = document.getElementById('tbody'); tbody.innerHTML = '';
+      pageData.forEach(r => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><input type="checkbox" class="row-check" data-id="${r.id}" ${selectedIds.has(r.id)?'checked':''}></td>
+          <td>${r.name || '-'}</td>
+          <td>${r.type}</td>
+          <td>${formatAssoc(r.assoc)}</td>
+          <td>${briefJson(r.conditions)}</td>
+          <td><span class="level-badge ${levelMap[r.level] || r.level}">${levelMap[r.level] || r.level || '-'}</span></td>
+          <td>${r.enabled ? '启用' : '停用'}</td>
+          <td>${r.createdAt || '-'}</td>
+          <td>
+            <div class="op-btns">
+              <button class="icon-btn" data-title="编辑" onclick="editRule('${r.id}')"><i class="fa-solid fa-pen"></i></button>
+              <button class="icon-btn" data-title="${r.enabled ? '停用' : '启用'}" onclick="toggleRule('${r.id}')"><i class="fa-solid ${r.enabled ? 'fa-pause' : 'fa-play'}"></i></button>
+              <button class="icon-btn danger" data-title="删除" onclick="deleteRule('${r.id}')"><i class="fa-solid fa-trash"></i></button>
+            </div>
+          </td>`;
+        tbody.appendChild(tr);
+      });
+      // 同步全选状态
+      const allSelected = pageData.length>0 && pageData.every(r => selectedIds.has(r.id));
+  const allCb = document.getElementById('selectAll');
+  if (allCb) {
+    allCb.checked = allSelected;
+    allCb.onchange = (e) => {
+      const checked = e.target.checked;
+      pageData.forEach(r => { if (checked) selectedIds.add(r.id); else selectedIds.delete(r.id); });
+      renderTable();
+    };
+  }
+      // 行勾选事件绑定
+      Array.from(tbody.querySelectorAll('.row-check')).forEach(cb => {
+        cb.addEventListener('change', (e) => {
+          const id = e.target.dataset.id; if (!id) return;
+          if (e.target.checked) selectedIds.add(id); else selectedIds.delete(id);
+          const start2 = (current.page-1)*current.pageSize, end2 = start2 + current.pageSize;
+          const pd2 = current.filtered.slice(start2, end2);
+          const allSel2 = pd2.length>0 && pd2.every(x => selectedIds.has(x.id));
+          const allCb2 = document.getElementById('selectAll'); if (allCb2) allCb2.checked = allSel2;
+        });
+      });
+      renderPagination();
+    }
+
+    function renderPagination() {
+      const total = current.filtered.length, totalPages = Math.max(1, Math.ceil(total/current.pageSize));
+      const pageNumbers = document.getElementById('pageNumbers'); pageNumbers.innerHTML = '';
+      for (let i=1;i<=totalPages;i++) {
+        const btn = document.createElement('button'); btn.className = 'btn'; btn.textContent = i;
+        if (i === current.page) { btn.style.background='var(--blue-6)'; btn.style.color='#fff'; btn.style.borderColor='var(--blue-6)'; }
+        btn.addEventListener('click', () => { current.page = i; renderTable(); });
+        pageNumbers.appendChild(btn);
+      }
+      document.getElementById('prevPage').onclick = () => { if (current.page>1) { current.page--; renderTable(); } };
+      document.getElementById('nextPage').onclick = () => { const tp = Math.max(1, Math.ceil(total/current.pageSize)); if (current.page<tp) { current.page++; renderTable(); } };
+    }
+
+    function openDrawer(title, data) {
+      document.getElementById('drawerTitle').textContent = title;
+      document.getElementById('drawer').classList.add('show');
+      // current.editing 标识编辑状态下的 id
+      document.getElementById('f_name').value = data?.name || '';
+      document.getElementById('f_type').value = data?.type || '抛洒物';
+      const assocSel = document.getElementById('f_assoc');
+      const assocValues = Array.isArray(data?.assoc) ? data.assoc : (data?.assoc ? [data.assoc] : []);
+      Array.from(assocSel.options).forEach(opt => {
+        const ov = opt.value;
+        opt.selected = assocValues.some(v => v === ov || opt.textContent.includes(v));
+      });
+      document.getElementById('f_conditions').value = JSON.stringify(data?.conditions ?? {"mode":"AND","items":[]}, null, 2);
+      document.getElementById('f_level').value = data?.level || '高级';
+      document.getElementById('f_enabled').value = String(data?.enabled ?? true);
+    }
+    function closeDrawer() { document.getElementById('drawer').classList.remove('show'); current.editing=null; }
+
+    function newRule() { current.editing=null; openDrawer('新建规则', null); }
+    function editRule(id) {
+      const r = rules.find(x => x.id === id); if (!r) return;
+      current.editing = id; openDrawer('编辑规则', r);
+    }
+
+    function saveRule() {
+      const id = current.editing || ('rule-' + Date.now());
+      const name = document.getElementById('f_name').value.trim();
+      const type = document.getElementById('f_type').value;
+      const assoc = Array.from(document.getElementById('f_assoc').selectedOptions).map(o => o.value);
+      const condText = document.getElementById('f_conditions').value.trim();
+      const level = document.getElementById('f_level').value;
+      const enabled = document.getElementById('f_enabled').value;
+      // 必填校验
+      const errors = [];
+      if (!name) errors.push('规则名称为必填项');
+      if (!type) errors.push('危害类型为必填项');
+      if (!assoc || assoc.length === 0) errors.push('关联设备/区域为必填项');
+      if (!condText) errors.push('匹配条件（JSON）为必填项');
+      let condObj = null;
+      if (condText) {
+        try { condObj = JSON.parse(condText); } catch { errors.push('匹配条件（JSON）格式不合法'); }
+      }
+      if (!level) errors.push('告警等级为必填项');
+      if (!enabled) errors.push('是否启用为必填项');
+      if (errors.length) { alert(errors.join('\n')); return; }
+
+      const obj = {
+        id,
+        name,
+        type,
+        assoc,
+        conditions: condObj ?? {"mode":"AND","items":[]},
+        level,
+        enabled: enabled === 'true',
+        createdAt: current.editing ? (rules.find(x => x.id === current.editing)?.createdAt || new Date().toISOString()) : new Date().toISOString()
+      };
+      const idx = rules.findIndex(x => x.id === id);
+      if (idx >= 0) rules[idx] = obj; else rules.unshift(obj);
+      localStorage.setItem(storeKey, JSON.stringify(rules));
+      applyFilter(); closeDrawer();
+    }
+
+    function toggleRule(id) {
+      const idx = rules.findIndex(x => x.id === id); if (idx < 0) return;
+      rules[idx].enabled = !rules[idx].enabled; rules[idx].updatedAt = new Date().toISOString();
+      localStorage.setItem(storeKey, JSON.stringify(rules)); applyFilter();
+    }
+    function copyRule(id) {
+      const r = rules.find(x => x.id === id); if (!r) return;
+      const clone = JSON.parse(JSON.stringify(r)); clone.id = 'rule-' + Date.now(); clone.name = r.name + '（副本）';
+      rules.unshift(clone); localStorage.setItem(storeKey, JSON.stringify(rules)); applyFilter();
+    }
+    function deleteRule(id) {
+      showConfirm('确定删除该告警规则吗？删除后不可恢复！', () => {
+        rules = rules.filter(x => x.id !== id); localStorage.setItem(storeKey, JSON.stringify(rules)); applyFilter();
+      });
+    }
+
+    function deleteSelectedRules(){
+      if (selectedIds.size === 0) {
+        if (window.Message && Message.warning) { Message.warning('请选择需要删除的数据！', 2); }
+        else { alert('请选择需要删除的数据！'); }
+        return;
+      }
+      showConfirm('确定删除选中规则吗？删除后不可恢复！', () => {
+        rules = rules.filter(r => !selectedIds.has(r.id));
+        selectedIds.clear();
+        localStorage.setItem(storeKey, JSON.stringify(rules));
+        applyFilter();
+      });
+    }
+
+    function showConfirm(message, onConfirm) {
+      const overlay = document.getElementById('confirmOverlay');
+      const msgEl = document.getElementById('confirmMessage');
+      const okBtn = document.getElementById('confirmOkBtn');
+      const cancelBtn = document.getElementById('confirmCancelBtn');
+      msgEl.textContent = message;
+      overlay.style.display = 'flex';
+      const cleanup = () => { overlay.style.display = 'none'; okBtn.onclick = null; cancelBtn.onclick = null; };
+      cancelBtn.onclick = cleanup;
+      okBtn.onclick = () => { cleanup(); try { onConfirm && onConfirm(); } catch (e) { console.error(e); } };
+    }
+
+    function exportJson() {
+      const blob = new Blob([JSON.stringify(rules, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob); const a = document.createElement('a');
+      a.href = url; a.download = 'alert_rules.json'; a.click(); URL.revokeObjectURL(url);
+    }
+    function importJson() {
+      const input = document.createElement('input'); input.type = 'file'; input.accept = 'application/json';
+      input.onchange = (e) => {
+        const file = e.target.files[0]; const reader = new FileReader();
+        reader.onload = () => { try { rules = JSON.parse(reader.result); localStorage.setItem(storeKey, JSON.stringify(rules)); applyFilter(); } catch {} };
+        reader.readAsText(file);
+      };
+      input.click();
+    }
+
+    // 条件判定与测试（简化版本）
+    function matchConditions(event, conditions) {
+      if (!conditions || !conditions.items || !conditions.items.length) return true;
+      const evalItem = (item) => {
+        // 简易取值：支持嵌套字段 metrics.temperature 等
+        const path = item.field.split('.'); let v = event;
+        for (const p of path) v = v?.[p];
+        const t = item.op, x = item.value;
+        if (t === '>=') return v >= x; if (t === '>') return v > x;
+        if (t === '<=') return v <= x; if (t === '<') return v < x;
+        if (t === '==') return v == x;
+        if (t === 'includes') return typeof v === 'string' && String(v).includes(String(x));
+        if (t === 'in') return Array.isArray(x) && x.includes(v);
+        return false;
+      };
+      const res = conditions.items.map(evalItem);
+      return conditions.mode === 'OR' ? res.some(Boolean) : res.every(Boolean);
+    }
+
+    function testMatch() {
+      const event = safeJson(document.getElementById('f_test_event').value, {});
+      const rule = {
+        type: document.getElementById('f_type').value,
+        scope: safeJson(document.getElementById('f_scope').value, {}),
+        conditions: safeJson(document.getElementById('f_conditions').value, {}),
+        window: safeJson(document.getElementById('f_window').value, {}),
+        severity: safeJson(document.getElementById('f_severity').value, {})
+      };
+      const okType = !rule.type || rule.type === event.type;
+      const okCond = matchConditions(event, rule.conditions);
+      const okScope = true; // 简化：范围校验可按设备/位置对比
+      const hit = okType && okCond && okScope;
+      document.getElementById('testResult').textContent = hit ? `命中（等级：${levelMap[rule.level] || rule.level || 'N/A'}）` : '未命中';
+    }
+
+    // 绑定事件
+    document.getElementById('btnNew').addEventListener('click', newRule);
+    document.getElementById('btnClose').addEventListener('click', closeDrawer);
+    document.getElementById('btnSave').addEventListener('click', saveRule);
+    document.getElementById('btnExport').addEventListener('click', exportJson);
+    document.getElementById('btnImport').addEventListener('click', importJson);
+    // 过滤事件：名称、类型、等级
+    document.getElementById('filterName').addEventListener('input', applyFilter);
+    document.getElementById('filterType').addEventListener('change', applyFilter);
+    document.getElementById('filterLevel').addEventListener('change', applyFilter);
+    // 显式搜索/重置按钮（与其他页面一致）
+    document.getElementById('btnSearch').addEventListener('click', applyFilter);
+    document.getElementById('btnReset').addEventListener('click', resetFilter);
+    // 头部批量删除
+    document.getElementById('btnDelete').addEventListener('click', deleteSelectedRules);
+
+    // 默认示例规则与补充：确保展示四种等级颜色
+    function ensureDemoLevels() {
+      const desired = ['低级','中级','高级','紧急'];
+      const present = new Set(rules.map(r => levelMap[r.level] || r.level));
+      const toAdd = desired.filter(l => !present.has(l)).map((l, i) => ({
+        id: `demo-${l}-${Date.now()}-${i}`,
+        name: `示例规则-${l}`,
+        type: hazardTypes[i % hazardTypes.length],
+        enabled: true,
+        assoc: ['CAM-01'],
+        conditions: { "mode":"AND", "items":[ {"field":"metrics.value","op":">=","value": i+1 } ] },
+        level: l,
+        createdAt: new Date().toISOString()
+      }));
+      if (toAdd.length) {
+        rules = rules.concat(toAdd);
+        localStorage.setItem(storeKey, JSON.stringify(rules));
+      }
+    }
+    if (!rules.length) {
+      rules = [
+        { id:"rule-low-01", name:"示例规则-低级", type:"抛洒物", enabled:true, assoc:["CAM-01"], conditions:{"mode":"AND","items":[{"field":"metrics.value","op":">=","value":1}]}, level:"低级", createdAt:new Date().toISOString() },
+        { id:"rule-mid-01", name:"示例规则-中级", type:"塌方", enabled:true, assoc:["CAM-02"], conditions:{"mode":"AND","items":[{"field":"metrics.value","op":">=","value":2}]}, level:"中级", createdAt:new Date().toISOString() },
+        { id:"rule-high-01", name:"示例规则-高级", type:"火灾", enabled:true, assoc:["隧道A"], conditions:{"mode":"AND","items":[{"field":"metrics.value","op":">=","value":3}]}, level:"高级", createdAt:new Date().toISOString() },
+        { id:"rule-urgent-01", name:"示例规则-紧急", type:"交通事故", enabled:true, assoc:["隧道A","CAM-01"], conditions:{"mode":"AND","items":[{"field":"metrics.temperature","op":">=","value":70},{"field":"metrics.smoke_density","op":">=","value":0.6}]}, level:"紧急", createdAt:new Date().toISOString() }
+      ];
+      localStorage.setItem(storeKey, JSON.stringify(rules));
+    } else {
+      // 补齐缺失等级的示例规则（不覆盖已有数据）
+      ensureDemoLevels();
+    }
+    applyFilter();
+  </script>
+</body>
+</html>
