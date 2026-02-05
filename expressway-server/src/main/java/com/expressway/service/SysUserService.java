@@ -2,6 +2,7 @@ package com.expressway.service;
 
 
 import com.expressway.dto.LoginDTO;
+import com.expressway.entity.SysUser;
 import com.expressway.vo.LogoutResponseVO;
 import com.expressway.vo.UserLoginVO;
 
@@ -18,4 +19,9 @@ public interface SysUserService {
      * 登出业务（验证令牌，销毁登录状态）
      */
     LogoutResponseVO logout(String token);
+
+    /**
+     * 根据用户ID查询用户信息
+     */
+    SysUser getUserById(Long userId);
 }

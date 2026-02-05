@@ -62,4 +62,9 @@ public class SysUserServiceImpl implements SysUserService {
         }
         return logoutResponseVO;
     }
+
+    @Override
+    public SysUser getUserById(Long userId) {
+        return sysUserMapper.selectById(userId);
+    }
 }
