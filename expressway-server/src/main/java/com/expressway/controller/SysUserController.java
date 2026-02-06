@@ -2,6 +2,7 @@ package com.expressway.controller;
 
 import com.expressway.context.BaseContext;
 import com.expressway.entity.SysUser;
+import com.expressway.result.Result;
 import com.expressway.service.SysUserService;
 import jakarta.annotation.Resource;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,8 +22,9 @@ public class SysUserController {
 //    }
 
     @GetMapping("/user/info")
-    public SysUser getUserInfo(){
+    public Result<SysUser> getUserInfo(){
         Long userId = BaseContext.getCurrentId();
-        return sysUserService.getUserById(userId);
+        SysUser user = sysUserService.getUserById(userId);
+        return Result.success(user);
     }
 }
