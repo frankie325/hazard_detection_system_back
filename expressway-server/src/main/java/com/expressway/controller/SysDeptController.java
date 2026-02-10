@@ -130,10 +130,16 @@ public class SysDeptController {
      * @param queryParams 部门名称、部门编码（可选，模糊查询）
      * @return 部门树形数据（适配前端Tree组件）
      */
-    @PostMapping("/tree")
-    public Result<List<DeptTreeVO>> getDeptTree(@RequestBody DeptQueryParamsDTO queryParams) {
+    /**
+ * 获取部门树形结构
+ * @param queryParams 部门查询参数DTO，包含过滤条件
+ * @return 包含部门树形结构的Result对象
+ * @throws Exception 当查询失败时抛出异常
+ */
+@PostMapping("/tree")
+    public Result<List<SysDept>> getDeptTree(@RequestBody DeptQueryParamsDTO queryParams) {
         try {
-            List<DeptTreeVO> deptTree = sysDeptService.getDeptTree(queryParams);
+            List<SysDept> deptTree = sysDeptService.getDeptTree(queryParams);
             return Result.success(deptTree);
         } catch (Exception e) {
             return Result.error("查询部门树形结构失败：" + e.getMessage());

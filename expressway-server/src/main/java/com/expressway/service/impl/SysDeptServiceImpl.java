@@ -8,13 +8,16 @@ import com.expressway.exception.DeptException;
 import com.expressway.mapper.SysDeptMapper;
 import com.expressway.service.SysDeptService;
 import com.expressway.vo.DeptTreeVO;
+import io.jsonwebtoken.lang.Objects;
 import jakarta.annotation.Resource;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -153,11 +156,11 @@ public class SysDeptServiceImpl implements SysDeptService {
      * 查询部门树形结构（用于树形展示+新增子部门时的上级选择）
      */
     @Override
-    public List<DeptTreeVO> getDeptTree(DeptQueryParamsDTO queryParams) {
-        // 1. 查询所有部门数据
-        List<SysDept> allDept = sysDeptMapper.selectAllDept(queryParams);
-        // 2. 递归构建树形结构（根节点parentId=0）
-        return buildDeptTree(allDept, 0L);
+    public List<SysDept> getDeptTree(DeptQueryParamsDTO queryParams) {
+        // 1. 查询过滤后的部门数据
+        List<SysDept> depts = sysDeptMapper.selectAllDept(queryParams);
+        // 2. 递归构建树形结构
+        return buildDeptTree(depts);
     }
 
     /**
@@ -171,31 +174,61 @@ public class SysDeptServiceImpl implements SysDeptService {
         return sysDeptMapper.selectDeptById(id);
     }
 
+
+    /**
+     * 获取部门的所有父级部门
+     * @param dept 指定部门
+     * @return 父级部门列表
+     */
+    public List<SysDept> getParentDepts(SysDept dept) {
+        List<SysDept> parentDepts = new ArrayList<SysDept>();
+
+        Long parentId = dept.getParentId();
+        while (parentId != 0){
+            SysDept parentDept = sysDeptMapper.selectDeptById(parentId);
+            parentDepts.add(parentDept);
+            parentId = parentDept.getParentId();
+        }
+        return parentDepts;
+    }
+
     /**
      * 递归构建部门树形结构
-     * @param allDept 所有部门列表
-     * @param parentId 上级部门ID（递归入口为0）
+     * @param allDept 部门列表（过滤数据）
      * @return 树形结构VO列表
      */
-    private List<DeptTreeVO> buildDeptTree(List<SysDept> allDept, Long parentId) {
-        List<DeptTreeVO> treeVOList = new ArrayList<>();
+    private List<SysDept> buildDeptTree(List<SysDept> allDept) {
 
-        // 筛选当前上级部门的所有子部门
-        List<SysDept> childrenDept = allDept.stream()
-                .filter(dept -> parentId.equals(dept.getParentId()))
-                .collect(Collectors.toList());
+        // 保存所有节点，包括过滤数据和补充的父节点
+        Map<Long, SysDept> map = new LinkedHashMap<>();
 
-        // 递归构建子层级
-        for (SysDept dept : childrenDept) {
-            DeptTreeVO treeVO = new DeptTreeVO();
-            BeanUtils.copyProperties(dept, treeVO);
-            // 递归查询当前部门的子部门
-            List<DeptTreeVO> subTree = buildDeptTree(allDept, dept.getId());
-            treeVO.setChildren(subTree);
-            treeVOList.add(treeVO);
+        for (SysDept dept : allDept) {
+           if(!map.containsKey(dept.getId())){
+               map.put(dept.getId(), dept);
+           }
+           List<SysDept> parentDepts = getParentDepts(dept);
+           System.out.println(parentDepts);
+           for (SysDept parentDept : parentDepts) {
+               if(!map.containsKey(parentDept.getId())){
+                   map.put(parentDept.getId(), parentDept);
+               }
+           }
         }
 
-        return treeVOList;
+        // 根据map构建树形结构
+        List<SysDept> tree = new ArrayList<>();
+        for (Map.Entry<Long, SysDept> entry : map.entrySet()) {
+            SysDept parentDept = map.get(entry.getValue().getParentId());
+            if(parentDept != null){
+                if(parentDept.getChildren() == null){
+                    parentDept.setChildren(new ArrayList<>());
+                }
+                parentDept.getChildren().add(entry.getValue());
+            }else{
+                tree.add(entry.getValue());
+            }
+        }
+        return tree;
     }
 
     /**

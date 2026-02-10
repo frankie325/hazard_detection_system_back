@@ -39,10 +39,15 @@ public interface SysDeptService {
      * @param queryParams 部门名称、部门编码（可选，模糊查询）
      * @return 部门树形结构
      */
-    List<DeptTreeVO> getDeptTree(DeptQueryParamsDTO queryParams);
+    List<SysDept> getDeptTree(DeptQueryParamsDTO queryParams);
 
     /**
      * 根据ID查询部门
      */
     SysDept getDeptById(Long id);
+
+    /**
+     * 根据部门Id查询该部门所有父级部门
+     */
+    List<SysDept> getParentDepts(SysDept dept);
 }
