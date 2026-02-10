@@ -104,8 +104,12 @@ public class SysDeptController {
      * @return 部门列表数据
      */
     @PostMapping("/list")
-    public Result<List<SysDept>> getAllDeptList(@RequestBody DeptQueryParamsDTO queryParams) {
+    public Result<List<SysDept>> getAllDeptList(@RequestBody(required = false) DeptQueryParamsDTO queryParams) {
         try {
+            // 如果不传参数，创建空对象
+            if (queryParams == null) {
+                queryParams = new DeptQueryParamsDTO();
+            }
             List<SysDept> deptList = sysDeptService.getAllDeptList(queryParams);
             return Result.success(deptList);
         } catch (Exception e) {
@@ -139,8 +143,12 @@ public class SysDeptController {
      * @throws Exception 当查询失败时抛出异常
      */
     @PostMapping("/tree")
-    public Result<List<SysDept>> getDeptTree(@RequestBody DeptQueryParamsDTO queryParams) {
+    public Result<List<SysDept>> getDeptTree(@RequestBody(required = false) DeptQueryParamsDTO queryParams) {
         try {
+            // 如果不传参数，创建空对象
+            if (queryParams == null) {
+                queryParams = new DeptQueryParamsDTO();
+            }
             List<SysDept> deptTree = sysDeptService.getDeptTree(queryParams);
             return Result.success(deptTree);
         } catch (Exception e) {
