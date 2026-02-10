@@ -41,7 +41,16 @@
 
     <!-- 查询所有部门（平级） -->
     <select id="selectAllDept" resultType="com.expressway.entity.SysDept">
-        SELECT * FROM sys_dept ORDER BY parent_id, id
+        SELECT * FROM sys_dept
+        <where>
+            <if test="deptName != null and deptName != ''">
+                AND dept_name LIKE CONCAT('%', #{deptName}, '%')
+            </if>
+            <if test="deptCode != null and deptCode != ''">
+                AND dept_code LIKE CONCAT('%', #{deptCode}, '%')
+            </if>
+        </where>
+        ORDER BY parent_id, id
     </select>
 
     <!-- 根据上级部门ID查询子部门 -->

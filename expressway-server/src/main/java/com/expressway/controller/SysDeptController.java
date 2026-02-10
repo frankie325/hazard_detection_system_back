@@ -1,6 +1,7 @@
 package com.expressway.controller;
 
 import com.expressway.dto.DeptAddDTO;
+import com.expressway.dto.DeptQueryParamsDTO;
 import com.expressway.dto.DeptUpdateDTO;
 import com.expressway.entity.SysDept;
 import com.expressway.exception.DeptException;
@@ -94,29 +95,16 @@ public class SysDeptController {
 
     /**
      * 查询部门列表（平级）
+     * @param queryParams 部门名称、部门编码（可选，模糊查询）
      * @return 部门列表数据
      */
-    @GetMapping("/list")
-    public Result<List<SysDept>> getAllDeptList() {
+    @PostMapping("/list")
+    public Result<List<SysDept>> getAllDeptList(@RequestBody DeptQueryParamsDTO queryParams) {
         try {
-            List<SysDept> deptList = sysDeptService.getAllDeptList();
+            List<SysDept> deptList = sysDeptService.getAllDeptList(queryParams);
             return Result.success(deptList);
         } catch (Exception e) {
             return Result.error("查询部门列表失败：" + e.getMessage());
-        }
-    }
-
-    /**
-     * 查询部门树形结构
-     * @return 部门树形数据（适配前端Tree组件）
-     */
-    @GetMapping("/tree")
-    public Result<List<DeptTreeVO>> getDeptTree() {
-        try {
-            List<DeptTreeVO> deptTree = sysDeptService.getDeptTree();
-            return Result.success(deptTree);
-        } catch (Exception e) {
-            return Result.error("查询部门树形结构失败：" + e.getMessage());
         }
     }
 
@@ -134,6 +122,21 @@ public class SysDeptController {
             return Result.error(e.getMessage());
         } catch (Exception e) {
             return Result.error("查询部门详情失败：" + e.getMessage());
+        }
+    }
+
+    /**
+     * 查询部门树形结构
+     * @param queryParams 部门名称、部门编码（可选，模糊查询）
+     * @return 部门树形数据（适配前端Tree组件）
+     */
+    @PostMapping("/tree")
+    public Result<List<DeptTreeVO>> getDeptTree(@RequestBody DeptQueryParamsDTO queryParams) {
+        try {
+            List<DeptTreeVO> deptTree = sysDeptService.getDeptTree(queryParams);
+            return Result.success(deptTree);
+        } catch (Exception e) {
+            return Result.error("查询部门树形结构失败：" + e.getMessage());
         }
     }
 }

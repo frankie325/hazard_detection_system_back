@@ -1,6 +1,7 @@
 package com.expressway.service.impl;
 
 import com.expressway.dto.DeptAddDTO;
+import com.expressway.dto.DeptQueryParamsDTO;
 import com.expressway.dto.DeptUpdateDTO;
 import com.expressway.entity.SysDept;
 import com.expressway.exception.DeptException;
@@ -144,17 +145,17 @@ public class SysDeptServiceImpl implements SysDeptService {
      * 查询平级部门列表（用于表格展示）
      */
     @Override
-    public List<SysDept> getAllDeptList() {
-        return sysDeptMapper.selectAllDept();
+    public List<SysDept> getAllDeptList(DeptQueryParamsDTO queryParams) {
+        return sysDeptMapper.selectAllDept(queryParams);
     }
 
     /**
      * 查询部门树形结构（用于树形展示+新增子部门时的上级选择）
      */
     @Override
-    public List<DeptTreeVO> getDeptTree() {
+    public List<DeptTreeVO> getDeptTree(DeptQueryParamsDTO queryParams) {
         // 1. 查询所有部门数据
-        List<SysDept> allDept = sysDeptMapper.selectAllDept();
+        List<SysDept> allDept = sysDeptMapper.selectAllDept(queryParams);
         // 2. 递归构建树形结构（根节点parentId=0）
         return buildDeptTree(allDept, 0L);
     }

@@ -1,5 +1,6 @@
 package com.expressway.entity;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 
 import java.util.Date;
@@ -12,7 +13,9 @@ public class SysDept {
     private String deptName;        // 部门名称（必填）
     private String deptCode;        // 部门编码（非必填）
     private String description;     // 描述（非必填）
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private Date createTime;        // 创建时间（后台自动生成）
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private Date updateTime;        // 更新时间（后台自动生成）
 
     // 树形结构专用字段（非数据库字段）

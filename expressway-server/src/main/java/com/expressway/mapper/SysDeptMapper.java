@@ -1,5 +1,6 @@
 package com.expressway.mapper;
 
+import com.expressway.dto.DeptQueryParamsDTO;
 import com.expressway.entity.SysDept;
 import org.apache.ibatis.annotations.Param;
 import org.springframework.stereotype.Repository;
@@ -35,7 +36,7 @@ public interface SysDeptMapper {
     /**
      * 查询所有部门（平级列表）
      */
-    List<SysDept> selectAllDept();
+    List<SysDept> selectAllDept(DeptQueryParamsDTO deptQueryParamsDTO);
 
     /**
      * 根据上级部门ID查询子部门

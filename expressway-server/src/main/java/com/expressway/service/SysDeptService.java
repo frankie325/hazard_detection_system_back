@@ -1,6 +1,7 @@
 package com.expressway.service;
 
 import com.expressway.dto.DeptAddDTO;
+import com.expressway.dto.DeptQueryParamsDTO;
 import com.expressway.dto.DeptUpdateDTO;
 import com.expressway.entity.SysDept;
 import com.expressway.vo.DeptTreeVO;
@@ -31,12 +32,14 @@ public interface SysDeptService {
     /**
      * 查询部门列表（平级）
      */
-    List<SysDept> getAllDeptList();
+    List<SysDept> getAllDeptList(DeptQueryParamsDTO queryParams);
 
     /**
      * 查询部门树形结构
+     * @param queryParams 部门名称、部门编码（可选，模糊查询）
+     * @return 部门树形结构
      */
-    List<DeptTreeVO> getDeptTree();
+    List<DeptTreeVO> getDeptTree(DeptQueryParamsDTO queryParams);
 
     /**
      * 根据ID查询部门
