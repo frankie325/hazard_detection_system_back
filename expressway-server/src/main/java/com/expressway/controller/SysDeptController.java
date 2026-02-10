@@ -27,6 +27,7 @@ public class SysDeptController {
 
     /**
      * 新增部门
+     *
      * @param deptAddDTO 新增部门参数（已做参数校验）
      * @return 统一响应结果
      */
@@ -44,6 +45,7 @@ public class SysDeptController {
 
     /**
      * 编辑部门
+     *
      * @param deptUpdateDTO 编辑部门参数（已做参数校验）
      * @return 统一响应结果
      */
@@ -61,6 +63,7 @@ public class SysDeptController {
 
     /**
      * 单个删除部门
+     *
      * @param id 部门ID（路径参数）
      * @return 统一响应结果
      */
@@ -78,6 +81,7 @@ public class SysDeptController {
 
     /**
      * 批量删除部门
+     *
      * @param ids 部门ID列表（请求体）
      * @return 统一响应结果
      */
@@ -95,6 +99,7 @@ public class SysDeptController {
 
     /**
      * 查询部门列表（平级）
+     *
      * @param queryParams 部门名称、部门编码（可选，模糊查询）
      * @return 部门列表数据
      */
@@ -110,6 +115,7 @@ public class SysDeptController {
 
     /**
      * 根据ID查询单个部门（用于编辑回显）
+     *
      * @param id 部门ID（路径参数）
      * @return 单个部门详情
      */
@@ -126,17 +132,13 @@ public class SysDeptController {
     }
 
     /**
-     * 查询部门树形结构
-     * @param queryParams 部门名称、部门编码（可选，模糊查询）
-     * @return 部门树形数据（适配前端Tree组件）
+     * 获取部门树形结构
+     *
+     * @param queryParams 部门查询参数DTO，包含过滤条件
+     * @return 包含部门树形结构的Result对象
+     * @throws Exception 当查询失败时抛出异常
      */
-    /**
- * 获取部门树形结构
- * @param queryParams 部门查询参数DTO，包含过滤条件
- * @return 包含部门树形结构的Result对象
- * @throws Exception 当查询失败时抛出异常
- */
-@PostMapping("/tree")
+    @PostMapping("/tree")
     public Result<List<SysDept>> getDeptTree(@RequestBody DeptQueryParamsDTO queryParams) {
         try {
             List<SysDept> deptTree = sysDeptService.getDeptTree(queryParams);
