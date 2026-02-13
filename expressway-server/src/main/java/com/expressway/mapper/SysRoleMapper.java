@@ -18,8 +18,12 @@ public interface SysRoleMapper {
     // 获取角色总数
     Long count();
 
+    // 获取所有角色
+    @Select("select * from sys_role")
+    List<SysRole> selectAll();
+
     // 获取角色列表
-    List<RoleVO> selectAllRole(RoleQueryParamsDTO roleQueryParamsDTO);
+    List<RoleVO> selectRoleList(RoleQueryParamsDTO roleQueryParamsDTO);
 
     @Select("select * from sys_role where role_name = #{roleName}")
     SysRole selectByName(String roleName);

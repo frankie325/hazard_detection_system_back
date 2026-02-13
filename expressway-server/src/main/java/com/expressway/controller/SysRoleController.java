@@ -3,6 +3,7 @@ package com.expressway.controller;
 import com.expressway.dto.RoleAddDTO;
 import com.expressway.dto.RoleUpdateDTO;
 import com.expressway.dto.RoleQueryParamsDTO;
+import com.expressway.entity.SysRole;
 import com.expressway.exception.RoleException;
 import com.expressway.result.Result;
 import com.expressway.service.SysRoleService;
@@ -23,6 +24,15 @@ public class SysRoleController {
 
     @Autowired
     private SysRoleService sysRoleService;
+
+    /**
+     * 获取所有角色列表
+     * */
+    @GetMapping("/allList")
+    public Result<List<SysRole>> getAllRole() {
+        List<SysRole> sysRoles = sysRoleService.getAllRole();
+        return Result.success(sysRoles);
+    }
 
     /**
      * 分页获取角色列表

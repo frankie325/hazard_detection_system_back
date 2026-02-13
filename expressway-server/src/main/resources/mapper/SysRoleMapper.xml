@@ -8,7 +8,7 @@
     </select>
 
     <!-- 查询角色列表 -->
-    <select id="selectAllRole" parameterType="com.expressway.dto.RoleQueryParamsDTO"
+    <select id="selectRoleList" parameterType="com.expressway.dto.RoleQueryParamsDTO"
             resultType="com.expressway.vo.RoleVO">
         SELECT sys_role.*, sys_dept.dept_name FROM sys_role left join sys_dept on sys_role.dept_id = sys_dept.id
         <where>

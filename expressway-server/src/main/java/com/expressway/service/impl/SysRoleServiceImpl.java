@@ -24,13 +24,17 @@ public class SysRoleServiceImpl implements SysRoleService {
     @Autowired
     private SysRoleMapper sysRoleMapper;
 
+    @Override
+    public List<SysRole> getAllRole() {
+        return sysRoleMapper.selectAll();
+    }
     /**
      * 获取角色列表
      */
     @Override
     public PageInfo<RoleVO> getRoleList(RoleQueryParamsDTO queryParams) {
         PageHelper.startPage(queryParams.getCurrent(), queryParams.getSize());
-        List<RoleVO> sysRoles = sysRoleMapper.selectAllRole(queryParams);
+        List<RoleVO> sysRoles = sysRoleMapper.selectRoleList(queryParams);
         return new PageInfo<>(sysRoles);
     }
 
