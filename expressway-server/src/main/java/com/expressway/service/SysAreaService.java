@@ -1,22 +1,19 @@
 package com.expressway.service;
 
 import com.expressway.dto.AreaAddDTO;
-import com.expressway.dto.AreaTreeDTO;
+import com.expressway.dto.AreaQueryParamsDTO;
 import com.expressway.dto.AreaUpdateDTO;
 import com.expressway.entity.SysArea;
+import com.expressway.vo.AreaVO;
+import com.github.pagehelper.PageInfo;
 
 import java.util.List;
 
 public interface SysAreaService {
     /**
-     * 查询区域列表
+     * 分页查询区域列表
      */
-    List<SysArea> getAllList();
-
-    /**
-     * 查询区域树形结构
-     */
-    List<AreaTreeDTO> getAreaTree();
+    PageInfo<AreaVO> getAreaList(AreaQueryParamsDTO queryParams);
 
     /**
      * 新增区域

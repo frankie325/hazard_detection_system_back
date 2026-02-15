@@ -1,17 +1,23 @@
 package com.expressway.mapper;
-import com.expressway.entity.SysArea;
-import org.apache.ibatis.annotations.Mapper;
 
-import org.springframework.stereotype.Repository;
+import com.expressway.dto.AreaQueryParamsDTO;
+import com.expressway.entity.SysArea;
+import com.expressway.vo.AreaVO;
+import org.apache.ibatis.annotations.Mapper;
 
 import java.util.List;
 
-@Repository
+@Mapper
 public interface SysAreaMapper {
     /**
      * 查询所有区域
      */
     List<SysArea> selectAllArea();
+
+    /**
+     * 根据条件查询区域列表
+     */
+    List<AreaVO> selectAreaList(AreaQueryParamsDTO queryParams);
 
     /**
      * 根据ID查询区域
@@ -42,9 +48,4 @@ public interface SysAreaMapper {
      * 根据部门ID查询区域数量
      */
     int countAreaByDeptId(Long deptId);
-
-    /**
-     * 根据父ID查询子区域
-     */
-    List<SysArea> selectAreaByParentId(Long parentId);
 }

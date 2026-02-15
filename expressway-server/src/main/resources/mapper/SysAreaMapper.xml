@@ -4,7 +4,27 @@
 <mapper namespace="com.expressway.mapper.SysAreaMapper">
     <!-- 查询所有区域 -->
     <select id="selectAllArea" resultType="com.expressway.entity.SysArea">
-        SELECT * FROM sys_area ORDER BY dept_id, id
+        SELECT a.*, d.dept_name FROM sys_area a
+        LEFT JOIN sys_dept d ON a.dept_id = d.id
+        ORDER BY a.dept_id, a.id
+    </select>
+
+    <!-- 根据条件查询区域列表 -->
+    <select id="selectAreaList" parameterType="com.expressway.dto.AreaQueryParamsDTO"
+            resultType="com.expressway.vo.AreaVO">
+        select a.*, dep.dept_name, count(dev.id) as device_count
+        from sys_area a
+        left join sys_dept dep on a.dept_id = dep.id
+        left join sys_device dev on a.id = dev.area_id
+        <where>
+            <if test="areaName != null and areaName != ''">
+                AND a.area_name LIKE CONCAT('%', #{areaName}, '%')
+            </if>
+            <if test="deptName != null and deptName != ''">
+                AND dep.dept_name LIKE CONCAT('%', #{deptName}, '%')
+            </if>
+        </where>
+        group by a.id
     </select>
 
     <!-- 根据ID查询区域 -->
@@ -14,20 +34,19 @@
 
     <!-- 新增区域 -->
     <insert id="insertArea" parameterType="com.expressway.entity.SysArea" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO sys_area (parent_id, area_name, dept_id, length, lane_count, coordinates, create_time, update_time)
-        VALUES (#{parentId}, #{areaName}, #{deptId}, #{length}, #{laneCount}, #{coordinates}, NOW(), NOW())
+        INSERT INTO sys_area (area_name, dept_id, length, lane_count, coordinates, create_time, update_time)
+        VALUES (#{areaName}, #{deptId}, #{length}, #{laneCount}, #{coordinates}, NOW(), NOW())
     </insert>
 
     <!-- 更新区域 -->
     <update id="updateAreaById" parameterType="com.expressway.entity.SysArea">
         UPDATE sys_area
-        SET parent_id = #{parentId},
-            area_name = #{areaName},
-            dept_id = #{deptId},
-            length = #{length},
-            lane_count = #{laneCount},
-            coordinates = #{coordinates},
-            update_time = NOW()
+        SET area_name = #{areaName},
+        dept_id = #{deptId},
+        length = #{length},
+        lane_count = #{laneCount},
+        coordinates = #{coordinates},
+        update_time = NOW()
         WHERE id = #{id}
     </update>
 
@@ -47,10 +66,5 @@
     <!-- 根据部门ID查询区域数量 -->
     <select id="countAreaByDeptId" resultType="int">
         SELECT COUNT(*) FROM sys_area WHERE dept_id = #{deptId}
-    </select>
-
-    <!-- 根据父ID查询子区域 -->
-    <select id="selectAreaByParentId" resultType="com.expressway.entity.SysArea">
-        SELECT * FROM sys_area WHERE parent_id = #{parentId} ORDER BY id
     </select>
 </mapper>

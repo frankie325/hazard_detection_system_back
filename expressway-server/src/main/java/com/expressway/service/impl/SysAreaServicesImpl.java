@@ -1,7 +1,7 @@
 package com.expressway.service.impl;
 
 import com.expressway.dto.AreaAddDTO;
-import com.expressway.dto.AreaTreeDTO;
+import com.expressway.dto.AreaQueryParamsDTO;
 import com.expressway.dto.AreaUpdateDTO;
 import com.expressway.entity.SysArea;
 import com.expressway.entity.SysDept;
@@ -9,14 +9,15 @@ import com.expressway.exception.AreaException;
 import com.expressway.mapper.SysAreaMapper;
 import com.expressway.mapper.SysDeptMapper;
 import com.expressway.service.SysAreaService;
+import com.expressway.vo.AreaVO;
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
 import jakarta.annotation.Resource;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class SysAreaServicesImpl implements SysAreaService {
@@ -27,36 +28,13 @@ public class SysAreaServicesImpl implements SysAreaService {
     private SysDeptMapper sysDeptMapper;
 
     /**
-     * 查询区域列表
+     * 分页查询区域列表
      */
     @Override
-    public List<SysArea> getAllList() {
-        return sysAreaMapper.selectAllArea();
-    }
-
-    /**
-     * 查询区域树形结构
-     */
-    @Override
-    public List<AreaTreeDTO> getAreaTree() {
-        List<SysArea> allAreas = sysAreaMapper.selectAllArea();
-        return buildAreaTree(allAreas, 0L);
-    }
-
-    private List<AreaTreeDTO> buildAreaTree(List<SysArea> allAreas, Long parentId) {
-        List<AreaTreeDTO> tree = new ArrayList<>();
-        for (SysArea area : allAreas) {
-            if (parentId.equals(area.getParentId())) {
-                AreaTreeDTO node = new AreaTreeDTO();
-                BeanUtils.copyProperties(area, node);
-                List<AreaTreeDTO> children = buildAreaTree(allAreas, area.getId());
-                if (!children.isEmpty()) {
-                    node.setChildren(children);
-                }
-                tree.add(node);
-            }
-        }
-        return tree;
+    public PageInfo<AreaVO> getAreaList(AreaQueryParamsDTO queryParams) {
+        PageHelper.startPage(queryParams.getCurrent(), queryParams.getSize());
+        List<AreaVO> areaList = sysAreaMapper.selectAreaList(queryParams);
+        return new PageInfo<>(areaList);
     }
 
     /**
@@ -71,22 +49,11 @@ public class SysAreaServicesImpl implements SysAreaService {
             throw new AreaException("负责部门不存在");
         }
 
-        // 2. 校验上级区域是否存在（如果指定了parentId且不为0）
-        if (areaAddDTO.getParentId() != null && !areaAddDTO.getParentId().equals(0L)) {
-            SysArea parentArea = sysAreaMapper.selectAreaById(areaAddDTO.getParentId());
-            if (parentArea == null) {
-                throw new AreaException("上级区域不存在");
-            }
-        }
-
-        // 3. DTO转实体
+        // 2. DTO转实体
         SysArea sysArea = new SysArea();
         BeanUtils.copyProperties(areaAddDTO, sysArea);
-        if (sysArea.getParentId() == null) {
-            sysArea.setParentId(0L);
-        }
 
-        // 4. 插入数据库
+        // 3. 插入数据库
         int insertResult = sysAreaMapper.insertArea(sysArea);
         if (insertResult != 1) {
             throw new AreaException("新增区域失败");
@@ -111,22 +78,11 @@ public class SysAreaServicesImpl implements SysAreaService {
             throw new AreaException("负责部门不存在");
         }
 
-        // 3. 校验上级区域是否存在（如果指定了parentId且不为0）
-        if (areaUpdateDTO.getParentId() != null && !areaUpdateDTO.getParentId().equals(0L)) {
-            SysArea parentArea = sysAreaMapper.selectAreaById(areaUpdateDTO.getParentId());
-            if (parentArea == null) {
-                throw new AreaException("上级区域不存在");
-            }
-        }
-
-        // 4. DTO转实体
+        // 3. DTO转实体
         SysArea sysArea = new SysArea();
         BeanUtils.copyProperties(areaUpdateDTO, sysArea);
-        if (sysArea.getParentId() == null) {
-            sysArea.setParentId(0L);
-        }
 
-        // 5. 更新数据库
+        // 4. 更新数据库
         int updateResult = sysAreaMapper.updateAreaById(sysArea);
         if (updateResult != 1) {
             throw new AreaException("编辑区域失败");

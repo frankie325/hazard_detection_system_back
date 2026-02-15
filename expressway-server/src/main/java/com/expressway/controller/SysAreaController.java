@@ -2,12 +2,14 @@ package com.expressway.controller;
 
 
 import com.expressway.dto.AreaAddDTO;
-import com.expressway.dto.AreaTreeDTO;
+import com.expressway.dto.AreaQueryParamsDTO;
 import com.expressway.dto.AreaUpdateDTO;
 import com.expressway.entity.SysArea;
 import com.expressway.exception.AreaException;
 import com.expressway.result.Result;
 import com.expressway.service.SysAreaService;
+import com.expressway.vo.AreaVO;
+import com.github.pagehelper.PageInfo;
 import jakarta.annotation.Resource;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -19,36 +21,23 @@ import java.util.List;
  * 处理区域相关HTTP请求，遵循RESTful风格
  */
 @RestController
-@RequestMapping("/user/sys/area")
+@RequestMapping("/sys/area")
 public class SysAreaController {
     @Resource
     private SysAreaService sysAreaService;
 
     /**
-     * 查询区域列表数据
-     * @return 区域列表数据
+     * 分页查询区域列表
+     * @param queryParams 查询参数（可选）
+     * @return 区域分页数据
      */
-    @GetMapping("/list")
-    public Result<List<SysArea>> getAllList(){
+    @PostMapping("/list")
+    public Result<PageInfo<AreaVO>> getAreaList(@RequestBody(required = false) AreaQueryParamsDTO queryParams){
         try{
-            List<SysArea> areaList = sysAreaService.getAllList();
-            return Result.success(areaList);
+            PageInfo<AreaVO> pageResult = sysAreaService.getAreaList(queryParams);
+            return Result.success(pageResult);
         } catch (RuntimeException e) {
             return Result.error("查询区域列表数据：" + e.getMessage());
-        }
-    }
-
-    /**
-     * 查询区域树形结构
-     * @return 区域树形结构数据
-     */
-    @GetMapping("/tree")
-    public Result<List<AreaTreeDTO>> getAreaTree(){
-        try{
-            List<AreaTreeDTO> areaTree = sysAreaService.getAreaTree();
-            return Result.success(areaTree);
-        } catch (RuntimeException e) {
-            return Result.error("查询区域树形结构：" + e.getMessage());
         }
     }
 

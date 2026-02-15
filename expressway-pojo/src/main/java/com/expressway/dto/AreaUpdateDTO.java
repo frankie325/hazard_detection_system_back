@@ -13,8 +13,6 @@ public class AreaUpdateDTO {
     @NotNull(message = "区域ID不能为空")
     private Long id;              // 区域ID（必填）
 
-    private Long parentId;       // 上级区域ID（0表示顶级区域，非必填）
-
     @NotBlank(message = "区域名称不能为空")
     @Size(max = 32, message = "区域名称长度不能超过32个字符")
     private String areaName;      // 区域名称（必填）
