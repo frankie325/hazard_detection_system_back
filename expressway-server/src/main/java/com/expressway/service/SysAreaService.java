@@ -4,6 +4,7 @@ import com.expressway.dto.AreaAddDTO;
 import com.expressway.dto.AreaQueryParamsDTO;
 import com.expressway.dto.AreaUpdateDTO;
 import com.expressway.entity.SysArea;
+import com.expressway.vo.AreaDeviceVO;
 import com.expressway.vo.AreaVO;
 import com.github.pagehelper.PageInfo;
 
@@ -14,6 +15,11 @@ public interface SysAreaService {
      * 查询所有区域列表（不分页）
      */
     List<AreaVO> getAllAreaList();
+
+    /**
+     * 查询区域及其设备列表
+     */
+    List<AreaDeviceVO> getAreaDeviceList();
 
     /**
      * 分页查询区域列表

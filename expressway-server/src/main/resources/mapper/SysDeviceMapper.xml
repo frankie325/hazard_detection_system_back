@@ -3,7 +3,7 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
 <mapper namespace="com.expressway.mapper.SysDeviceMapper">
     <!-- 查询所有设备 -->
-    <select id="selectAllDevice" resultType="com.expressway.entity.SysDevice">
+    <select id="selectAllDevice" resultType="com.expressway.vo.DeviceVO">
         SELECT * FROM sys_device ORDER BY create_time DESC
     </select>
 

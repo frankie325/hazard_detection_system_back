@@ -3,13 +3,18 @@ package com.expressway.service.impl;
 import com.expressway.dto.AreaAddDTO;
 import com.expressway.dto.AreaQueryParamsDTO;
 import com.expressway.dto.AreaUpdateDTO;
+import com.expressway.dto.DeviceQueryParamsDTO;
 import com.expressway.entity.SysArea;
 import com.expressway.entity.SysDept;
+import com.expressway.entity.SysDevice;
 import com.expressway.exception.AreaException;
 import com.expressway.mapper.SysAreaMapper;
 import com.expressway.mapper.SysDeptMapper;
+import com.expressway.mapper.SysDeviceMapper;
 import com.expressway.service.SysAreaService;
+import com.expressway.vo.AreaDeviceVO;
 import com.expressway.vo.AreaVO;
+import com.expressway.vo.DeviceVO;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import jakarta.annotation.Resource;
@@ -17,7 +22,9 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class SysAreaServicesImpl implements SysAreaService {
@@ -27,12 +34,43 @@ public class SysAreaServicesImpl implements SysAreaService {
     @Resource
     private SysDeptMapper sysDeptMapper;
 
+    @Resource
+    private SysDeviceMapper sysDeviceMapper;
+
     /**
      * 查询所有区域列表（不分页）
      */
     @Override
     public List<AreaVO> getAllAreaList() {
         return sysAreaMapper.selectAllArea();
+    }
+
+    /**
+     * 查询区域及其设备列表
+     */
+    @Override
+    public List<AreaDeviceVO> getAreaDeviceList() {
+        // 1. 查询所有区域
+        List<AreaVO> areaList = sysAreaMapper.selectAllArea();
+        // 2. 查询所有设备
+        List<DeviceVO> deviceList = sysDeviceMapper.selectAllDevice();
+
+        // 3. 封装结果
+        List<AreaDeviceVO> result = new ArrayList<>();
+        for (AreaVO area : areaList) {
+            AreaDeviceVO areaDeviceVO = new AreaDeviceVO();
+            BeanUtils.copyProperties(area, areaDeviceVO);
+
+            // 4. 查询该区域下的设备列表
+            List<DeviceVO> dList = deviceList.stream()
+                    .filter(d -> d.getAreaId().equals(area.getId()))
+                    .peek(d -> d.setAreaName(area.getAreaName()))
+                    .collect(Collectors.toList());
+            areaDeviceVO.setDeviceList(dList);
+            result.add(areaDeviceVO);
+        }
+
+        return result;
     }
 
     /**

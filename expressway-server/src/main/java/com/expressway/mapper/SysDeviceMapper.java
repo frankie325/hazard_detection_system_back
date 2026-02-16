@@ -13,7 +13,7 @@ public interface SysDeviceMapper {
     /**
      * 查询所有设备
      */
-    List<SysDevice> selectAllDevice();
+    List<DeviceVO> selectAllDevice();
 
     /**
      * 根据条件分页查询设备

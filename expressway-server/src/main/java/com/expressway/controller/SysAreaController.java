@@ -8,6 +8,7 @@ import com.expressway.entity.SysArea;
 import com.expressway.exception.AreaException;
 import com.expressway.result.Result;
 import com.expressway.service.SysAreaService;
+import com.expressway.vo.AreaDeviceVO;
 import com.expressway.vo.AreaVO;
 import com.github.pagehelper.PageInfo;
 import jakarta.annotation.Resource;
@@ -39,6 +40,18 @@ public class SysAreaController {
         }
     }
 
+    /**
+     * 查询区域以及区域下的设备列表
+     */
+    @GetMapping("/deviceList")
+    public Result<List<AreaDeviceVO>> getAreaDeviceList() {
+        try {
+            List<AreaDeviceVO> areaList = sysAreaService.getAreaDeviceList();
+            return Result.success(areaList);
+        } catch (RuntimeException e) {
+            return Result.error("查询区域设备列表数据：" + e.getMessage());
+        }
+    }
     /**
      * 分页查询区域列表
      *
