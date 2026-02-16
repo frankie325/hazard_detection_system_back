@@ -1,13 +1,18 @@
 package com.expressway.service.impl;
 
 import com.expressway.dto.DeviceAddDTO;
+import com.expressway.dto.DeviceQueryParamsDTO;
 import com.expressway.dto.DeviceUpdateDTO;
 import com.expressway.entity.SysArea;
 import com.expressway.entity.SysDevice;
+import com.expressway.enumeration.DeviceStatus;
 import com.expressway.exception.DeviceException;
 import com.expressway.mapper.SysAreaMapper;
 import com.expressway.mapper.SysDeviceMapper;
 import com.expressway.service.SysDeviceService;
+import com.expressway.vo.DeviceVO;
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
 import jakarta.annotation.Resource;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
@@ -24,19 +29,13 @@ public class SysDeviceServiceImpl implements SysDeviceService {
     private SysAreaMapper sysAreaMapper;
 
     /**
-     * 查询所有设备
+     * 分页查询设备列表
      */
     @Override
-    public List<SysDevice> getAllList() {
-        return sysDeviceMapper.selectAllDevice();
-    }
-
-    /**
-     * 根据区域ID查询设备
-     */
-    @Override
-    public List<SysDevice> getDeviceByAreaId(Long areaId) {
-        return sysDeviceMapper.selectDeviceByAreaId(areaId);
+    public PageInfo<DeviceVO> getDeviceList(DeviceQueryParamsDTO queryParams) {
+        PageHelper.startPage(queryParams.getCurrent(), queryParams.getSize());
+        List<DeviceVO> deviceList = sysDeviceMapper.selectDeviceList(queryParams);
+        return new PageInfo<>(deviceList);
     }
 
     /**
@@ -60,7 +59,7 @@ public class SysDeviceServiceImpl implements SysDeviceService {
         // 3. DTO转实体
         SysDevice sysDevice = new SysDevice();
         BeanUtils.copyProperties(deviceAddDTO, sysDevice);
-        sysDevice.setStatus("O");
+        sysDevice.setStatus(DeviceStatus.ONLINE);
 
         // 4. 插入数据库
         int insertResult = sysDeviceMapper.insertDevice(sysDevice);

@@ -7,9 +7,30 @@
         SELECT * FROM sys_device ORDER BY create_time DESC
     </select>
 
-    <!-- 根据区域ID查询设备 -->
-    <select id="selectDeviceByAreaId" resultType="com.expressway.entity.SysDevice">
-        SELECT * FROM sys_device WHERE area_id = #{areaId} ORDER BY create_time DESC
+    <!-- 根据条件分页查询设备 -->
+    <select id="selectDeviceList" parameterType="com.expressway.dto.DeviceQueryParamsDTO"
+            resultType="com.expressway.vo.DeviceVO">
+        SELECT d.*, a.area_name
+        FROM sys_device d
+        LEFT JOIN sys_area a ON d.area_id = a.id
+        <where>
+            <if test="deviceName != null and deviceName != ''">
+                AND d.device_name LIKE CONCAT('%', #{deviceName}, '%')
+            </if>
+            <if test="deviceCode != null and deviceCode != ''">
+                AND d.device_code LIKE CONCAT('%', #{deviceCode}, '%')
+            </if>
+            <if test="deviceType != null">
+                AND d.device_type = #{deviceType}
+            </if>
+            <if test="status != null">
+                AND d.status = #{status}
+            </if>
+            <if test="areaId != null">
+                AND d.area_id = #{areaId}
+            </if>
+        </where>
+        ORDER BY d.create_time DESC
     </select>
 
     <!-- 根据ID查询设备 -->
@@ -24,22 +45,24 @@
 
     <!-- 新增设备 -->
     <insert id="insertDevice" parameterType="com.expressway.entity.SysDevice" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO sys_device (device_name, device_code, device_type, model, area_id, install_location, ip_address, status, create_time, update_time)
-        VALUES (#{deviceName}, #{deviceCode}, #{deviceType}, #{deviceModel}, #{areaId}, #{location}, #{ipAddress}, #{status}, NOW(), NOW())
+        INSERT INTO sys_device (device_name, device_code, device_type, model, area_id, location, ip_address, status, create_time, update_time)
+        VALUES (#{deviceName}, #{deviceCode}, #{deviceType}, #{model}, #{areaId}, #{location}, #{ipAddress}, #{status}, NOW(), NOW())
     </insert>
 
     <!-- 更新设备 -->
     <update id="updateDeviceById" parameterType="com.expressway.entity.SysDevice">
         UPDATE sys_device
-        SET device_name = #{deviceName},
-            device_code = #{deviceCode},
-            device_type = #{deviceType},
-            model = #{deviceModel},
-            area_id = #{areaId},
-            install_location = #{location},
-            ip_address = #{ipAddress},
-            status = #{status},
+        <set>
+            <if test="deviceName != null and deviceName != ''">device_name = #{deviceName},</if>
+            <if test="deviceCode != null and deviceCode != ''">device_code = #{deviceCode},</if>
+            <if test="deviceType != null">device_type = #{deviceType},</if>
+            <if test="model != null and model != ''">model = #{model},</if>
+            <if test="areaId != null">area_id = #{areaId},</if>
+            <if test="location != null and location != ''">location = #{location},</if>
+            <if test="ipAddress != null and ipAddress != ''">ip_address = #{ipAddress},</if>
+            <if test="status != null">status = #{status},</if>
             update_time = NOW()
+        </set>
         WHERE id = #{id}
     </update>
 

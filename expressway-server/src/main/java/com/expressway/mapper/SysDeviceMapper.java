@@ -1,13 +1,14 @@
 package com.expressway.mapper;
 
+import com.expressway.dto.DeviceQueryParamsDTO;
 import com.expressway.entity.SysDevice;
+import com.expressway.vo.DeviceVO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
-import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
-@Repository
+@Mapper
 public interface SysDeviceMapper {
     /**
      * 查询所有设备
@@ -15,9 +16,9 @@ public interface SysDeviceMapper {
     List<SysDevice> selectAllDevice();
 
     /**
-     * 根据区域ID查询设备
+     * 根据条件分页查询设备
      */
-    List<SysDevice> selectDeviceByAreaId(Long areaId);
+    List<DeviceVO> selectDeviceList(DeviceQueryParamsDTO queryParams);
 
     /**
      * 根据ID查询设备

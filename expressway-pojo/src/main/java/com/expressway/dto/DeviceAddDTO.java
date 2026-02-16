@@ -1,5 +1,6 @@
 package com.expressway.dto;
 
+import com.expressway.enumeration.DeviceType;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -17,10 +18,10 @@ public class DeviceAddDTO {
     @NotBlank(message = "设备编码不能为空")
     private String deviceCode;    // 设备编码（必填）
 
-    @NotBlank(message = "设备类型不能为空")
-    private String deviceType;    // 设备类型（必填）
+    @NotNull(message = "设备类型不能为空")
+    private DeviceType deviceType;    // 设备类型（必填）
 
-    private String deviceModel;   // 设备型号（非必填）
+    private String model;   // 设备型号（非必填）
 
     @NotNull(message = "所属区域不能为空")
     private Long areaId;          // 所属区域ID（必填）
