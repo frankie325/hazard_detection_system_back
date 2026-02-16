@@ -28,6 +28,14 @@ public class SysAreaServicesImpl implements SysAreaService {
     private SysDeptMapper sysDeptMapper;
 
     /**
+     * 查询所有区域列表（不分页）
+     */
+    @Override
+    public List<AreaVO> getAllAreaList() {
+        return sysAreaMapper.selectAllArea();
+    }
+
+    /**
      * 分页查询区域列表
      */
     @Override

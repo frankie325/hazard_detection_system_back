@@ -12,7 +12,7 @@ public interface SysAreaMapper {
     /**
      * 查询所有区域
      */
-    List<SysArea> selectAllArea();
+    List<AreaVO> selectAllArea();
 
     /**
      * 根据条件查询区域列表

@@ -11,6 +11,11 @@ import java.util.List;
 
 public interface SysAreaService {
     /**
+     * 查询所有区域列表（不分页）
+     */
+    List<AreaVO> getAllAreaList();
+
+    /**
      * 分页查询区域列表
      */
     PageInfo<AreaVO> getAreaList(AreaQueryParamsDTO queryParams);

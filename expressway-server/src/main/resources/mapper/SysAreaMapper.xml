@@ -3,10 +3,11 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
 <mapper namespace="com.expressway.mapper.SysAreaMapper">
     <!-- 查询所有区域 -->
-    <select id="selectAllArea" resultType="com.expressway.entity.SysArea">
-        SELECT a.*, d.dept_name FROM sys_area a
-        LEFT JOIN sys_dept d ON a.dept_id = d.id
-        ORDER BY a.dept_id, a.id
+    <select id="selectAllArea" resultType="com.expressway.vo.AreaVO">
+        SELECT a.*, count(d.id) as device_count FROM sys_area a
+        LEFT JOIN sys_device d ON a.id = d.area_id 
+        GROUP BY a.id
+        ORDER BY a.create_time DESC
     </select>
 
     <!-- 根据条件查询区域列表 -->
@@ -25,6 +26,7 @@
             </if>
         </where>
         group by a.id
+        ORDER BY a.create_time DESC
     </select>
 
     <!-- 根据ID查询区域 -->

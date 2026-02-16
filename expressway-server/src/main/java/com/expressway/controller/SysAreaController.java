@@ -27,13 +27,27 @@ public class SysAreaController {
     private SysAreaService sysAreaService;
 
     /**
+     * 查询所有区域列表（不分页）
+     */
+    @GetMapping("/allList")
+    public Result<List<AreaVO>> getAllAreaList() {
+        try {
+            List<AreaVO> areaList = sysAreaService.getAllAreaList();
+            return Result.success(areaList);
+        } catch (RuntimeException e) {
+            return Result.error("查询区域列表数据：" + e.getMessage());
+        }
+    }
+
+    /**
      * 分页查询区域列表
+     *
      * @param queryParams 查询参数（可选）
      * @return 区域分页数据
      */
     @PostMapping("/list")
-    public Result<PageInfo<AreaVO>> getAreaList(@RequestBody(required = false) AreaQueryParamsDTO queryParams){
-        try{
+    public Result<PageInfo<AreaVO>> getAreaList(@RequestBody(required = false) AreaQueryParamsDTO queryParams) {
+        try {
             PageInfo<AreaVO> pageResult = sysAreaService.getAreaList(queryParams);
             return Result.success(pageResult);
         } catch (RuntimeException e) {
@@ -43,6 +57,7 @@ public class SysAreaController {
 
     /**
      * 新增区域
+     *
      * @param areaAddDTO 新增区域参数（已做参数校验）
      * @return 统一响应结果
      */
@@ -60,6 +75,7 @@ public class SysAreaController {
 
     /**
      * 编辑区域
+     *
      * @param areaUpdateDTO 编辑区域参数（已做参数校验）
      * @return 统一响应结果
      */
@@ -77,6 +93,7 @@ public class SysAreaController {
 
     /**
      * 单个删除区域
+     *
      * @param id 区域ID（路径参数）
      * @return 统一响应结果
      */
@@ -94,6 +111,7 @@ public class SysAreaController {
 
     /**
      * 批量删除区域
+     *
      * @param ids 区域ID列表（请求体）
      * @return 统一响应结果
      */
@@ -111,6 +129,7 @@ public class SysAreaController {
 
     /**
      * 根据ID查询单个区域（用于编辑回显）
+     *
      * @param id 区域ID（路径参数）
      * @return 单个区域详情
      */
