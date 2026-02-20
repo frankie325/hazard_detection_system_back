@@ -1,7 +1,7 @@
 package com.expressway.enumeration;
 
 /**
- * 设备类型枚举
+ * 检测事件类型枚举
  */
 public enum DetectEventType {
     CAST("CAST", "抛洒物"),
