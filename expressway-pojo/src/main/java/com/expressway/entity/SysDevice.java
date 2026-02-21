@@ -17,6 +17,7 @@ public class SysDevice {
     private Long areaId;          // 所属区域ID
     private String location;      // 安装位置
     private String ipAddress;     // IP地址
+    private Long alarmRuleId;     // 应用规则ID
     private DeviceStatus status;        // 状态（在线/离线/维护）
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private Date createTime;      // 创建时间

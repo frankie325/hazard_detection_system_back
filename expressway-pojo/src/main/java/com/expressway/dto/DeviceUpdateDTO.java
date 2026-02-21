@@ -32,4 +32,6 @@ public class DeviceUpdateDTO {
     private String location;      // 安装位置（非必填）
 
     private String ipAddress;     // IP地址（非必填）
+
+    private Long alarmRuleId;     // 应用规则ID（非必填）
 }

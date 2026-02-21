@@ -45,8 +45,8 @@
 
     <!-- 新增设备 -->
     <insert id="insertDevice" parameterType="com.expressway.entity.SysDevice" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO sys_device (device_name, device_code, device_type, model, area_id, location, ip_address, status, create_time, update_time)
-        VALUES (#{deviceName}, #{deviceCode}, #{deviceType}, #{model}, #{areaId}, #{location}, #{ipAddress}, #{status}, NOW(), NOW())
+        INSERT INTO sys_device (device_name, device_code, device_type, model, area_id, location, ip_address, alarm_rule_id, status, create_time, update_time)
+        VALUES (#{deviceName}, #{deviceCode}, #{deviceType}, #{model}, #{areaId}, #{location}, #{ipAddress}, #{alarmRuleId}, #{status}, NOW(), NOW())
     </insert>
 
     <!-- 更新设备 -->
@@ -60,6 +60,7 @@
             <if test="areaId != null">area_id = #{areaId},</if>
             <if test="location != null and location != ''">location = #{location},</if>
             <if test="ipAddress != null and ipAddress != ''">ip_address = #{ipAddress},</if>
+            <if test="alarmRuleId != null">alarm_rule_id = #{alarmRuleId},</if>
             <if test="status != null">status = #{status},</if>
             update_time = NOW()
         </set>
