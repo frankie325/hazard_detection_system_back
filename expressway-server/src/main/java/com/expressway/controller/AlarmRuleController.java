@@ -27,6 +27,20 @@ public class AlarmRuleController {
     private AlarmRuleService alarmRuleService;
 
     /**
+     * 查询所有告警规则列表（不分页）
+     * @return 所有告警规则列表
+     */
+    @GetMapping("/allList")
+    public Result<List<AlarmRuleVO>> getAllAlarmRuleList() {
+        try {
+            List<AlarmRuleVO> list = alarmRuleService.getAllAlarmRuleList();
+            return Result.success(list);
+        } catch (RuntimeException e) {
+            return Result.error("查询告警规则列表失败：" + e.getMessage());
+        }
+    }
+
+    /**
      * 分页查询告警规则列表
      *
      * @param queryParams 查询参数（可选）

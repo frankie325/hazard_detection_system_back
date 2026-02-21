@@ -11,6 +11,11 @@ import java.util.List;
 
 public interface AlarmRuleService {
     /**
+     * 查询所有告警规则列表（不分页）
+     */
+    List<AlarmRuleVO> getAllAlarmRuleList();
+
+    /**
      * 分页查询告警规则列表
      */
     PageInfo<AlarmRuleVO> getAlarmRuleList(AlarmRuleQueryParamsDTO queryParams);

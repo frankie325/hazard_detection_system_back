@@ -24,6 +24,11 @@ public class AlarmRuleServiceImpl implements AlarmRuleService {
     private AlarmRuleMapper alarmRuleMapper;
 
     @Override
+    public List<AlarmRuleVO> getAllAlarmRuleList() {
+        return alarmRuleMapper.selectAllAlarmRule();
+    }
+
+    @Override
     public PageInfo<AlarmRuleVO> getAlarmRuleList(AlarmRuleQueryParamsDTO queryParams) {
         PageHelper.startPage(queryParams.getCurrent(), queryParams.getSize());
         List<AlarmRuleVO> list = alarmRuleMapper.selectAlarmRuleList(queryParams);

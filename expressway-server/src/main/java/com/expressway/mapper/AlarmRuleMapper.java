@@ -11,6 +11,11 @@ import java.util.List;
 @Mapper
 public interface AlarmRuleMapper {
     /**
+     * 查询所有告警规则列表（不分页）
+     */
+    List<AlarmRuleVO> selectAllAlarmRule();
+
+    /**
      * 分页查询告警规则列表
      */
     List<AlarmRuleVO> selectAlarmRuleList(AlarmRuleQueryParamsDTO queryParams);

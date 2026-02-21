@@ -3,6 +3,12 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
 <mapper namespace="com.expressway.mapper.AlarmRuleMapper">
 
+    <!-- 查询所有告警规则列表（不分页） -->
+    <select id="selectAllAlarmRule" resultType="com.expressway.vo.AlarmRuleVO">
+        SELECT * FROM biz_alarm_rule
+        ORDER BY create_time DESC
+    </select>
+
     <!-- 分页查询告警规则列表 -->
     <select id="selectAlarmRuleList" parameterType="com.expressway.dto.AlarmRuleQueryParamsDTO"
             resultType="com.expressway.vo.AlarmRuleVO">
