@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.expressway.mapper.AlarmRuleMapper">
+
+    <!-- 分页查询告警规则列表 -->
+    <select id="selectAlarmRuleList" parameterType="com.expressway.dto.AlarmRuleQueryParamsDTO"
+            resultType="com.expressway.vo.AlarmRuleVO">
+        SELECT * FROM biz_alarm_rule
+        <where>
+            <if test="ruleName != null and ruleName != ''">
+                AND rule_name LIKE CONCAT('%', #{ruleName}, '%')
+            </if>
+            <if test="eventType != null">
+                AND event_type = #{eventType}
+            </if>
+            <if test="alarmLevel != null">
+                AND alarm_level = #{alarmLevel}
+            </if>
+            <if test="isEnabled != null">
+                AND is_enabled = #{isEnabled}
+            </if>
+        </where>
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 根据ID查询告警规则 -->
+    <select id="selectAlarmRuleById" resultType="com.expressway.entity.AlarmRule">
+        SELECT * FROM biz_alarm_rule
+        WHERE id = #{id}
+    </select>
+
+    <!-- 新增告警规则 -->
+    <insert id="insertAlarmRule" parameterType="com.expressway.entity.AlarmRule" useGeneratedKeys="true"
+            keyProperty="id">
+        INSERT INTO biz_alarm_rule (rule_name, event_type, match_condition,
+        alarm_level, is_enabled, remark, create_time, update_time)
+        VALUES (#{ruleName}, #{eventType.code}, #{matchCondition},
+        #{alarmLevel.code}, #{isEnabled}, #{remark}, NOW(), NOW())
+    </insert>
+
+    <!-- 更新告警规则 -->
+    <update id="updateAlarmRuleById" parameterType="com.expressway.entity.AlarmRule">
+        UPDATE biz_alarm_rule
+        <set>
+            <if test="ruleName != null and ruleName != ''">rule_name = #{ruleName},</if>
+            <if test="eventType != null">event_type = #{eventType.code},</if>
+            <if test="matchCondition != null and matchCondition != ''">match_condition = #{matchCondition},</if>
+            <if test="alarmLevel != null">alarm_level = #{alarmLevel.code},</if>
+            <if test="isEnabled != null">is_enabled = #{isEnabled},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            update_time = NOW()
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <!-- 根据ID删除告警规则 -->
+    <delete id="deleteAlarmRuleById">
+        DELETE FROM biz_alarm_rule WHERE id = #{id}
+    </delete>
+
+    <!-- 批量删除告警规则 -->
+    <delete id="batchDeleteAlarmRule">
+        DELETE FROM biz_alarm_rule WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+</mapper>
