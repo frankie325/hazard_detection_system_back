@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.expressway.mapper.DetectEventStreamMapper">
+    <!-- 查询事件流列表（关联区域和设备） -->
+    <select id="selectEventStreamList" parameterType="com.expressway.dto.DetectEventStreamQueryParamsDTO"
+            resultType="com.expressway.vo.DetectEventStreamVO">
+        SELECT e.*, d.id as device_id, d.device_name, d.location, a.area_name
+        FROM biz_event_stream e
+        LEFT JOIN sys_device d ON e.device_id = d.id
+        LEFT JOIN sys_area a ON d.area_id = a.id
+        <where>
+            <if test="eventName != null and eventName != ''">
+                AND e.event_name LIKE CONCAT('%', #{eventName}, '%')
+            </if>
+            <if test="deviceId != null">
+                AND e.device_id = #{deviceId}
+            </if>
+            <if test="deviceName != null and deviceName != ''">
+                AND d.device_name LIKE CONCAT('%', #{deviceName}, '%')
+            </if>
+            <if test="areaName != null and areaName != ''">
+                AND a.area_name LIKE CONCAT('%', #{areaName}, '%')
+            </if>
+            <if test="eventType != null">
+                AND e.event_type = #{eventType}
+            </if>
+            <if test="startTime != null">
+                AND e.create_time &gt;= #{startTime}
+            </if>
+            <if test="endTime != null">
+                AND e.create_time &lt;= #{endTime}
+            </if>
+        </where>
+        ORDER BY e.create_time DESC
+    </select>
+</mapper>
