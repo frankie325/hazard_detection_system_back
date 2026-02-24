@@ -1,5 +1,6 @@
 package com.expressway.service.impl;
 
+import com.expressway.context.BaseContext;
 import com.expressway.dto.AlarmConfirmDTO;
 import com.expressway.dto.AlarmMessageQueryParamsDTO;
 import com.expressway.dto.AlarmMessageUpdateDTO;
@@ -74,6 +75,8 @@ public class AlarmMessageServiceImpl implements AlarmMessageService {
 
         // 4.修改告警状态为处理中
         AlarmMessageUpdateDTO updateDTO = new AlarmMessageUpdateDTO();
+        // 设置确认人为当前登录用户
+        updateDTO.setConfirmedBy(BaseContext.getCurrentId());
         updateDTO.setId(alarmConfirm.getAlarmId());
         updateDTO.setAlarmStatus(AlarmStatus.PROCESSING);
         updateAlarmMessage(updateDTO);

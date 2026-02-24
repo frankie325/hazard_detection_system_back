@@ -47,6 +47,7 @@
         <set>
             <if test="alarmStatus != null">alarm_status = #{alarmStatus.code},</if>
             <if test="closeReason != null and closeReason != ''">close_reason = #{closeReason},</if>
+            <if test="confirmedBy != null">confirmed_by = #{confirmedBy},</if>
             <if test="processingResult != null and processingResult != ''">processing_result = #{processingResult},</if>
             <if test="alarmStatus != null and alarmStatus.code == 'CLOSED'">close_time = NOW(),</if>
             update_time = NOW()

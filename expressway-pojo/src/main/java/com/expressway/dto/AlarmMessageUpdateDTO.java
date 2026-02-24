@@ -14,4 +14,6 @@ public class AlarmMessageUpdateDTO {
     private String closeReason;         // 关闭原因
 
     private String processingResult;    // 处理结果
+
+    private Long confirmedBy;           // 确认人ID
 }
