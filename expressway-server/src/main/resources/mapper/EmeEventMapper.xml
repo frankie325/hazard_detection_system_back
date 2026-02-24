@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.expressway.mapper.EmeEventMapper">
+
+    <!-- 查询所有应急事件列表 -->
+    <select id="selectAllEmeEvent" resultType="com.expressway.vo.EmeEventVO">
+        SELECT e.*, u.name AS receiver_name, a.alarm_name
+        FROM biz_emergency_event e
+        LEFT JOIN sys_user u ON e.receiver_id = u.id
+        LEFT JOIN biz_alarm_message a ON e.alarm_id = a.id
+        ORDER BY e.create_time DESC
+    </select>
+
+    <!-- 创建应急事件 -->
+    <insert id="insertEmeEvent" parameterType="com.expressway.entity.EmeEvent" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO biz_emergency_event (event_name, event_level, event_type, location, status, alarm_id, dept_id, create_time, update_time)
+        VALUES (#{eventName}, #{eventLevel.code}, #{eventType.code}, #{location}, #{status.code}, #{alarmId}, #{deptId}, NOW(), NOW())
+    </insert>
+</mapper>
