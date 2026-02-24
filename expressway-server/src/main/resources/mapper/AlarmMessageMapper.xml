@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.expressway.mapper.AlarmMessageMapper">
+
+    <!-- 分页查询告警消息列表 -->
+    <select id="selectAlarmMessageList" parameterType="com.expressway.dto.AlarmMessageQueryParamsDTO"
+            resultType="com.expressway.vo.AlarmMessageVO">
+        SELECT m.*, d.device_name, d.location, r.rule_name
+        FROM biz_alarm_message m
+        LEFT JOIN sys_device d ON m.device_id = d.id
+        LEFT JOIN biz_alarm_rule r ON m.rule_id = r.id
+        <where>
+            <if test="alarmName != null and alarmName != ''">
+                AND m.alarm_name LIKE CONCAT('%', #{alarmName}, '%')
+            </if>
+            <if test="alarmLevel != null">
+                AND m.alarm_level = #{alarmLevel.code}
+            </if>
+            <if test="deviceName != null and deviceName != ''">
+                AND d.device_name LIKE CONCAT('%', #{deviceName}, '%')
+            </if>
+            <if test="eventType != null">
+                AND m.event_type = #{eventType.code}
+            </if>
+            <if test="alarmStatus != null">
+                AND m.alarm_status = #{alarmStatus.code}
+            </if>
+            <if test="startTime != null and startTime != ''">
+                AND m.create_time >= #{startTime}
+            </if>
+            <if test="endTime != null and endTime != ''">
+                AND m.create_time &lt;= #{endTime}
+            </if>
+        </where>
+        ORDER BY m.create_time DESC
+    </select>
+
+    <!-- 根据ID查询告警消息 -->
+    <select id="selectAlarmMessageById" resultType="com.expressway.entity.AlarmMessage">
+        SELECT * FROM biz_alarm_message WHERE id = #{id}
+    </select>
+
+    <!-- 更新告警消息 -->
+    <update id="updateAlarmMessageById" parameterType="com.expressway.entity.AlarmMessage">
+        UPDATE biz_alarm_message
+        <set>
+            <if test="alarmStatus != null">alarm_status = #{alarmStatus.code},</if>
+            <if test="closeReason != null and closeReason != ''">close_reason = #{closeReason},</if>
+            <if test="processingResult != null and processingResult != ''">processing_result = #{processingResult},</if>
+            <if test="alarmStatus != null and alarmStatus.code == 'CLOSED'">close_time = NOW(),</if>
+            update_time = NOW()
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <!-- 根据ID查询告警消息详情 -->
+    <select id="selectAlarmMessageVOById" resultType="com.expressway.vo.AlarmMessageVO">
+        SELECT m.*, d.device_name, d.location, r.rule_name
+        FROM biz_alarm_message m
+        LEFT JOIN sys_device d ON m.device_id = d.id
+        LEFT JOIN biz_alarm_rule r ON m.rule_id = r.id
+        WHERE m.id = #{id}
+    </select>
+</mapper>
