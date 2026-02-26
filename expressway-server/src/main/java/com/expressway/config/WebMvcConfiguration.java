@@ -41,14 +41,15 @@ public class WebMvcConfiguration extends WebMvcConfigurationSupport {
      */
     protected void addInterceptors(InterceptorRegistry registry) {
         log.info("开始注册自定义拦截器...");
-
+        String[] excludePaths = {"/sys/**", "/detect/**", "/alarm/**", "/emergency/**"};
         registry.addInterceptor(jwtTokenUserInterceptor)
-                .addPathPatterns("/sys/**")
+                .addPathPatterns(excludePaths)
                 .excludePathPatterns("/auth/**");
     }
 
     /**
      * 通过knife4j生成接口文档
+     *
      * @return
      */
     @Bean
@@ -70,6 +71,7 @@ public class WebMvcConfiguration extends WebMvcConfigurationSupport {
 
     /**
      * 设置静态资源映射
+     *
      * @param registry
      */
     protected void addResourceHandlers(ResourceHandlerRegistry registry) {
@@ -79,6 +81,7 @@ public class WebMvcConfiguration extends WebMvcConfigurationSupport {
 
     /**
      * 扩展Spring MVC框架的消息转化器
+     *
      * @param converters
      */
     @Override
