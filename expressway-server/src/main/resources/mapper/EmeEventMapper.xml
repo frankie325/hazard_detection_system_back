@@ -5,16 +5,58 @@
 
     <!-- 查询所有应急事件列表 -->
     <select id="selectAllEmeEvent" resultType="com.expressway.vo.EmeEventVO">
-        SELECT e.*, u.name AS receiver_name, a.alarm_name
+        SELECT e.*, a.alarm_name
         FROM biz_emergency_event e
-        LEFT JOIN sys_user u ON e.receiver_id = u.id
         LEFT JOIN biz_alarm_message a ON e.alarm_id = a.id
+        ORDER BY e.create_time DESC
+    </select>
+
+    <!-- 根据部门ID查询应急事件列表 -->
+    <select id="selectEmeEventByDeptId" resultType="com.expressway.vo.EmeEventVO">
+        SELECT e.*, a.alarm_name, d.dept_name
+        FROM biz_emergency_event e
+        LEFT JOIN biz_alarm_message a ON e.alarm_id = a.id
+        LEFT JOIN sys_dept d ON e.dept_id = d.id
+        WHERE e.dept_id = #{deptId}
         ORDER BY e.create_time DESC
     </select>
 
     <!-- 创建应急事件 -->
     <insert id="insertEmeEvent" parameterType="com.expressway.entity.EmeEvent" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO biz_emergency_event (event_name, event_level, event_type, location, status, alarm_id, dept_id, create_time, update_time)
-        VALUES (#{eventName}, #{eventLevel.code}, #{eventType.code}, #{location}, #{status.code}, #{alarmId}, #{deptId}, NOW(), NOW())
+        INSERT INTO biz_emergency_event (event_name, event_level, event_type, location, status, alarm_id, dept_id,
+        create_time, update_time)
+        VALUES (#{eventName}, #{eventLevel.code}, #{eventType.code}, #{location}, #{status.code}, #{alarmId}, #{deptId},
+        NOW(), NOW())
     </insert>
+
+    <!-- 根据ID查询应急事件 -->
+    <select id="selectById" parameterType="java.lang.Long" resultType="com.expressway.entity.EmeEvent">
+        SELECT * FROM biz_emergency_event WHERE id = #{id}
+    </select>
+
+    <!-- 根据ID查询应急事件详情 -->
+    <select id="selectVOById" parameterType="java.lang.Long" resultType="com.expressway.vo.EmeEventVO">
+        SELECT e.*, a.alarm_name, d.dept_name
+        FROM biz_emergency_event e
+        LEFT JOIN biz_alarm_message a ON e.alarm_id = a.id
+        LEFT JOIN sys_dept d ON e.dept_id = d.id
+        WHERE e.id = #{id}
+    </select>
+
+    <!-- 更新应急事件 -->
+    <update id="updateEmeEvent" parameterType="com.expressway.entity.EmeEvent">
+        UPDATE biz_emergency_event
+        <set>
+            <if test="eventName != null">event_name = #{eventName},</if>
+            <if test="eventLevel != null">event_level = #{eventLevel.code},</if>
+            <if test="eventType != null">event_type = #{eventType.code},</if>
+            <if test="location != null">location = #{location},</if>
+            <if test="status != null">status = #{status.code},</if>
+            <if test="receiverRoleId != null">receiver_role_id = #{receiverRoleId},</if>
+            <if test="alarmId != null">alarm_id = #{alarmId},</if>
+            <if test="deptId != null">dept_id = #{deptId},</if>
+            update_time = NOW()
+        </set>
+        WHERE id = #{id}
+    </update>
 </mapper>

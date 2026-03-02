@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.expressway.mapper.EmeTimelineMapper">
+
+    <!-- 创建时间线 -->
+    <insert id="insertEmeTimeline" parameterType="com.expressway.entity.EmeTimeline" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO biz_event_timeline (event_id, operate_time, operator_id, action_type, action_text, departure, destination, remark, create_time)
+        VALUES (#{eventId}, #{operateTime}, #{operatorId}, #{actionType.code}, #{actionText}, #{departure}, #{destination}, #{remark}, NOW())
+    </insert>
+
+    <!-- 根据应急事件ID查询时间线列表 -->
+    <select id="selectByEmergencyId" parameterType="java.lang.Long" resultType="com.expressway.vo.EmeTimelineVO">
+        SELECT t.id, t.event_id, t.operate_time, t.operator_id, u.name as operator_name,
+               t.action_type, t.action_text, t.departure, t.destination, t.remark, t.create_time
+        FROM biz_event_timeline t
+        LEFT JOIN sys_user u ON t.operator_id = u.id
+        WHERE t.event_id = #{eventId}
+        ORDER BY t.operate_time ASC
+    </select>
+</mapper>

@@ -14,6 +14,7 @@ public class EmeEventVO extends EmeEvent {
     private String eventLevelName;      // 事件等级名称
     private String eventTypeName;      // 事件类型名称
     private String statusName;      // 状态名称
+    private String deptName;          // 处置部门名称
 
     // 获取时间等级中文名称
     public String getEventLevelName() {

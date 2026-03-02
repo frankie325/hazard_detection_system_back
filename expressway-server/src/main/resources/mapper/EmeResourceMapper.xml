@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.expressway.mapper.EmeResourceMapper">
+
+    <!-- 查询所有资源池列表 -->
+    <select id="selectAllEmeResource" resultType="com.expressway.vo.EmeResourceVO">
+        SELECT * FROM biz_emergency_resource
+        ORDER BY create_time DESC
+    </select>
+</mapper>
