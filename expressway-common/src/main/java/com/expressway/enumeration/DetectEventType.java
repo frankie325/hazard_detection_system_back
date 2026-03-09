@@ -24,4 +24,19 @@ public enum DetectEventType {
     public String getDescription() {
         return description;
     }
+
+    /**
+     * 根据代码或描述获取枚举值
+     */
+    public static DetectEventType getByValue(String value) {
+        if (value == null) {
+            return null;
+        }
+        for (DetectEventType type : values()) {
+            if (type.code.equals(value) || type.description.equals(value)) {
+                return type;
+            }
+        }
+        return null;
+    }
 }

@@ -17,8 +17,8 @@
             <if test="ruleName != null and ruleName != ''">
                 AND rule_name LIKE CONCAT('%', #{ruleName}, '%')
             </if>
-            <if test="eventType != null">
-                AND event_type = #{eventType}
+            <if test="hazardType != null">
+                AND hazard_type = #{hazardType}
             </if>
             <if test="alarmLevel != null">
                 AND alarm_level = #{alarmLevel}
@@ -39,9 +39,9 @@
     <!-- 新增告警规则 -->
     <insert id="insertAlarmRule" parameterType="com.expressway.entity.AlarmRule" useGeneratedKeys="true"
             keyProperty="id">
-        INSERT INTO biz_alarm_rule (rule_name, event_type, match_condition,
+        INSERT INTO biz_alarm_rule (rule_name, hazard_type, associate_type, associate_ids, match_condition,
         alarm_level, is_enabled, remark, create_time, update_time)
-        VALUES (#{ruleName}, #{eventType.code}, #{matchCondition},
+        VALUES (#{ruleName}, #{hazardType.code}, #{associateType}, #{associateIds}, #{matchCondition},
         #{alarmLevel.code}, #{isEnabled}, #{remark}, NOW(), NOW())
     </insert>
 
@@ -50,7 +50,9 @@
         UPDATE biz_alarm_rule
         <set>
             <if test="ruleName != null and ruleName != ''">rule_name = #{ruleName},</if>
-            <if test="eventType != null">event_type = #{eventType.code},</if>
+            <if test="hazardType != null">hazard_type = #{hazardType.code},</if>
+            <if test="associateType != null and associateType != ''">associate_type = #{associateType},</if>
+            <if test="associateIds != null and associateIds != ''">associate_ids = #{associateIds},</if>
             <if test="matchCondition != null and matchCondition != ''">match_condition = #{matchCondition},</if>
             <if test="alarmLevel != null">alarm_level = #{alarmLevel.code},</if>
             <if test="isEnabled != null">is_enabled = #{isEnabled},</if>

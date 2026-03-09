@@ -8,13 +8,13 @@ import lombok.EqualsAndHashCode;
 @Data
 @EqualsAndHashCode(callSuper = true)
 public class AlarmRuleVO extends AlarmRule {
-    private String eventTypeName; // 关联类型名称
+    private String hazardTypeName; // 危害类型名称
     private String alarmLevelName;  // 告警等级名称
 
     // 获取危害类型中文名称
-    public String getEventTypeName() {
-        if (getEventType() != null) {
-            return getEventType().getDescription();
+    public String getHazardTypeName() {
+        if (getHazardType() != null) {
+            return getHazardType().getDescription();
         }
         return null;
     }

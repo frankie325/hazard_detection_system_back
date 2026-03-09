@@ -43,17 +43,21 @@ public class JwtTokenUserInterceptor implements HandlerInterceptor {
         }
 
         // 1、从请求头中获取令牌（修复NullPointerException问题）
-        String token = jwtProperties.getUserTokenName();
-        // 2、空令牌校验：如果令牌为空/空白，直接抛自定义异常
-        if (token == null || token.trim().isEmpty()) {
+        String tokenName = jwtProperties.getUserTokenName();
+        // 2、从请求头中获取实际的令牌值
+        String tokenHeader = request.getHeader(tokenName);
+        // 3、空令牌校验：如果令牌为空/空白，直接抛自定义异常
+        if (tokenHeader == null || tokenHeader.trim().isEmpty()) {
             throw new NotLoginException("未检测到登录令牌，请先登录");
         }
-
-        String tokenHeader = request.getHeader(token);
         log.info("jwt校验:{}", tokenHeader);
 
         // 3、校验令牌
         try {
+            // 移除Bearer前缀
+            if (tokenHeader.startsWith("Bearer ")) {
+                tokenHeader = tokenHeader.substring(7);
+            }
             Claims claims = JwtUtils.parseToken(jwtProperties.getUserSecretKey(), tokenHeader);
             Long userId = Long.valueOf(claims.get(JwtClaimsConstant.USER_ID).toString());
             log.info("当前用户名：{}", userId);

@@ -8,6 +8,6 @@ import lombok.Data;
 public class AlarmRuleQueryParamsDTO extends PageDTO {
     private Short isEnabled;
     private String ruleName;            // 规则名称
-    private DetectEventType eventType; // 危害类型
+    private DetectEventType hazardType; // 危害类型
     private AlarmLevel alarmLevel;      // 告警等级
 }

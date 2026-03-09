@@ -13,7 +13,13 @@ public class AlarmRuleAddDTO {
     private String ruleName;            // 规则名称
 
     @NotNull(message = "危害类型不能为空")
-    private DetectEventType eventType; // 危害类型
+    private DetectEventType hazardType; // 危害类型
+
+    @NotBlank(message = "关联类型不能为空")
+    private String associateType;       // 关联类型(D-设备, A-区域)
+
+    @NotBlank(message = "关联对象ID列表不能为空")
+    private String associateIds;        // 关联对象ID列表(逗号分隔)
 
     @NotNull(message = "匹配条件不能为空")
     private JsonNode matchCondition;    // 匹配条件(JSON对象)

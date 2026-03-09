@@ -10,9 +10,12 @@ import com.expressway.service.AlarmRuleService;
 import com.expressway.vo.AlarmRuleVO;
 import com.github.pagehelper.PageInfo;
 import jakarta.annotation.Resource;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 
 /**
@@ -143,6 +146,45 @@ public class AlarmRuleController {
             return Result.error(e.getMessage());
         } catch (Exception e) {
             return Result.error("批量删除告警规则失败：" + e.getMessage());
+        }
+    }
+
+    /**
+     * 导出告警规则为JSON文件
+     *
+     * @param response HTTP响应对象
+     */
+    @GetMapping("/export")
+    public void exportAlarmRules(HttpServletResponse response) {
+        try {
+            alarmRuleService.exportAlarmRules(response);
+        } catch (IOException e) {
+            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * 从JSON文件导入告警规则
+     *
+     * @param file 上传的JSON文件
+     * @return 统一响应结果
+     */
+    @PostMapping("/import")
+    public Result<?> importAlarmRules(@RequestParam("file") MultipartFile file) {
+        try {
+            if (file.isEmpty()) {
+                return Result.error("请选择要导入的文件");
+            }
+            String fileName = file.getOriginalFilename();
+            if (fileName == null || !fileName.toLowerCase().endsWith(".json")) {
+                return Result.error("请上传JSON格式的文件");
+            }
+            alarmRuleService.importAlarmRules(file);
+            return Result.success("导入告警规则成功");
+        } catch (AlarmRuleException e) {
+            return Result.error(e.getMessage());
+        } catch (Exception e) {
+            return Result.error("导入告警规则失败：" + e.getMessage());
         }
     }
 }

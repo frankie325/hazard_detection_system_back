@@ -16,7 +16,13 @@ public class AlarmRuleUpdateDTO {
     private String ruleName;
 
     @NotNull(message = "危害类型不能为空")
-    private DetectEventType eventType;
+    private DetectEventType hazardType;
+
+    @NotBlank(message = "关联类型不能为空")
+    private String associateType;
+
+    @NotBlank(message = "关联对象ID列表不能为空")
+    private String associateIds;
 
     @NotNull(message = "匹配条件不能为空")
     private JsonNode matchCondition;

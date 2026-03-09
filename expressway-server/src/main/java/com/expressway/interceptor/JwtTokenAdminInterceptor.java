@@ -45,6 +45,10 @@ public class JwtTokenAdminInterceptor implements HandlerInterceptor {
 
         //2、校验令牌
         try {
+            // 移除Bearer前缀
+            if (token != null && token.startsWith("Bearer ")) {
+                token = token.substring(7);
+            }
             log.info("jwt校验:{}", token);
             Claims claims = JwtUtils.parseToken(jwtProperties.getAdminSecretKey(), token);
             Long empId = Long.valueOf(claims.get(JwtClaimsConstant.EMP_ID).toString());

@@ -6,7 +6,10 @@ import com.expressway.dto.AlarmRuleUpdateDTO;
 import com.expressway.entity.AlarmRule;
 import com.expressway.vo.AlarmRuleVO;
 import com.github.pagehelper.PageInfo;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 
 public interface AlarmRuleService {
@@ -44,4 +47,14 @@ public interface AlarmRuleService {
      * 批量删除告警规则
      */
     void batchDeleteAlarmRule(List<Long> ids);
+
+    /**
+     * 导出告警规则为JSON文件
+     */
+    void exportAlarmRules(HttpServletResponse response) throws IOException;
+
+    /**
+     * 从JSON文件导入告警规则
+     */
+    void importAlarmRules(MultipartFile file) throws IOException;
 }
