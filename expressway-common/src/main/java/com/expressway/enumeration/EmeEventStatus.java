@@ -2,13 +2,14 @@ package com.expressway.enumeration;
 
 /**
  * 应急事件状态枚举
+ * 数据库中存储的是中文描述
  */
 public enum EmeEventStatus {
-    START("START", "启动"),
-    CONFIRMED("CONFIRMED", "已确认"),
-    DISPATCHING("DISPATCHING", "调度中"),
-    PROCESSING("PROCESSING", "处理中"),
-    CLOSED("CLOSED", "已关闭");
+    启动("START", "启动"),
+    已确认("CONFIRMED", "已确认"),
+    调度中("DISPATCHING", "调度中"),
+    处理中("PROCESSING", "处理中"),
+    已关闭("CLOSED", "已关闭");
 
     private final String code;
     private final String description;

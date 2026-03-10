@@ -24,4 +24,9 @@ public interface EmeEventResourceMapper {
      * 根据事件ID查询关联列表
      */
     List<EmeEventResource> selectByEventId(Long eventId);
+
+    /**
+     * 根据事件ID查询关联的资源ID列表
+     */
+    List<Long> selectResourceIdsByEventId(Long eventId);
 }

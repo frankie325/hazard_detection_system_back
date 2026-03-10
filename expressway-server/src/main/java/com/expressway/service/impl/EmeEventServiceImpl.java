@@ -72,7 +72,7 @@ public class EmeEventServiceImpl implements EmeEventService {
         EmeEvent emeEvent = new EmeEvent();
         BeanUtils.copyProperties(addDTO, emeEvent);
         // 默认状态为启动
-        emeEvent.setStatus(EmeEventStatus.START);
+        emeEvent.setStatus(EmeEventStatus.启动);
         int result = emeEventMapper.insertEmeEvent(emeEvent);
         if (result != 1) {
             throw new EmeEventException("新增事件失败");
@@ -127,18 +127,18 @@ public class EmeEventServiceImpl implements EmeEventService {
         String actionText = "";
 
         switch (actionType) {
-            case CONFIRM:
-                // 确认事件：状态 START -> CONFIRMED
-                if (event.getStatus() != EmeEventStatus.START) {
+            case 确认:
+                // 确认事件：状态 启动 -> 已确认
+                if (event.getStatus() != EmeEventStatus.启动) {
                     throw new EmeEventException("当前状态不允许确认操作");
                 }
-                newStatus = EmeEventStatus.CONFIRMED;
+                newStatus = EmeEventStatus.已确认;
                 actionText = "事件已确认";
                 break;
 
-            case BIND:
-                // 资源绑定：需要指定接收角色，状态 CONFIRMED -> DISPATCHING
-                if (event.getStatus() != EmeEventStatus.CONFIRMED) {
+            case 资源绑定:
+                // 资源绑定：需要指定接收角色，状态 已确认 -> 调度中
+                if (event.getStatus() != EmeEventStatus.已确认) {
                     throw new EmeEventException("当前状态不允许资源绑定操作");
                 }
                 if (updateDTO.getReceiverRoleId() == null) {
@@ -154,36 +154,36 @@ public class EmeEventServiceImpl implements EmeEventService {
                 bindDTO.setEventId(updateDTO.getEventId());
                 bindDTO.setResourceIds(updateDTO.getResourceIds());
                 emeResourceService.bindEventResource(bindDTO);
-                newStatus = EmeEventStatus.DISPATCHING;
+                newStatus = EmeEventStatus.调度中;
                 actionText = "资源已绑定，已指派接收角色";
                 break;
 
-            case SIGN:
-                // 到场签到：只有接收角色下的用户可以操作，状态 DISPATCHING -> PROCESSING
-                if (event.getStatus() != EmeEventStatus.DISPATCHING) {
+            case 现场签到:
+                // 到场签到：只有接收角色下的用户可以操作，状态 调度中 -> 处理中
+                if (event.getStatus() != EmeEventStatus.调度中) {
                     throw new EmeEventException("当前状态不允许签到操作");
                 }
                 checkReceiverRole(event.getReceiverRoleId(), currentUserId, "签到");
-                newStatus = EmeEventStatus.PROCESSING;
+                newStatus = EmeEventStatus.处理中;
                 actionText = "已到场签到，开始处理";
                 break;
 
-            case CLOSED:
-                // 关闭：只有接收角色下的用户可以操作，状态 PROCESSING -> CLOSED
-//                if (event.getStatus() != EmeEventStatus.PROCESSING) {
+            case 关闭事件:
+                // 关闭：只有接收角色下的用户可以操作，状态 处理中 -> 已关闭
+//                if (event.getStatus() != EmeEventStatus.处理中) {
 //                    throw new EmeEventException("当前状态不允许关闭操作");
 //                }
                 //checkReceiverRole(event.getReceiverRoleId(), currentUserId, "关闭");
-                newStatus = EmeEventStatus.CLOSED;
+                newStatus = EmeEventStatus.已关闭;
                 actionText = "事件已关闭";
                 break;
-            case REMARK:
-                if (event.getStatus() == EmeEventStatus.CLOSED) {
+            case 行动备注:
+                if (event.getStatus() == EmeEventStatus.已关闭) {
                     throw new EmeEventException("当前状态不允许备注操作");
                 }
                 break;
-            case ATTACHMENT:
-                if (event.getStatus() == EmeEventStatus.CLOSED) {
+            case 上传资料:
+                if (event.getStatus() == EmeEventStatus.已关闭) {
                     throw new EmeEventException("当前状态不允许上传附件操作");
                 }
                 break;

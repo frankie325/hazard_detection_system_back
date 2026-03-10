@@ -5,7 +5,22 @@
 
     <!-- 查询所有资源池列表 -->
     <select id="selectAllEmeResource" resultType="com.expressway.vo.EmeResourceVO">
-        SELECT * FROM biz_emergency_resource
+        SELECT id, resource_name as resourceName, resource_code as resourceCode, 
+               resource_type as resourceType, quantity as num, status, 
+               create_time as createTime, update_time as updateTime
+        FROM sys_resource
         ORDER BY create_time DESC
+    </select>
+
+    <!-- 根据ID列表查询资源 -->
+    <select id="selectByIds" parameterType="java.util.List" resultType="com.expressway.vo.EmeResourceVO">
+        SELECT id, resource_name as resourceName, resource_code as resourceCode, 
+               resource_type as resourceType, quantity as num, status, 
+               create_time as createTime, update_time as updateTime
+        FROM sys_resource
+        WHERE id IN
+        <foreach collection="list" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
     </select>
 </mapper>

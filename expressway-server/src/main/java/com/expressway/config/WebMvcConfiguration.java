@@ -41,7 +41,7 @@ public class WebMvcConfiguration extends WebMvcConfigurationSupport {
      */
     protected void addInterceptors(InterceptorRegistry registry) {
         log.info("开始注册自定义拦截器...");
-        String[] excludePaths = {"/sys/**", "/detect/**", "/alarm/**", "/emergency/**"};
+        String[] excludePaths = {"/sys/**", "/detect/**", "/alarm/**", "/emergency/**", "/api/emergency/**"};
         registry.addInterceptor(jwtTokenUserInterceptor)
                 .addPathPatterns(excludePaths)
                 .excludePathPatterns("/auth/**");

@@ -5,7 +5,7 @@
 
     <!-- 批量插入应急事件资源关联 -->
     <insert id="batchInsert" parameterType="java.util.List">
-        INSERT INTO biz_emergency_event_resource (event_id, resource_id, create_time)
+        INSERT INTO biz_emergency_resource (emergency_id, resource_id, create_time)
         VALUES
         <foreach collection="list" item="item" separator=",">
             (#{item.eventId}, #{item.resourceId}, NOW())
@@ -14,11 +14,16 @@
 
     <!-- 根据事件ID删除关联 -->
     <delete id="deleteByEventId" parameterType="java.lang.Long">
-        DELETE FROM biz_emergency_event_resource WHERE event_id = #{eventId}
+        DELETE FROM biz_emergency_resource WHERE emergency_id = #{eventId}
     </delete>
 
     <!-- 根据事件ID查询关联列表 -->
     <select id="selectByEventId" parameterType="java.lang.Long" resultType="com.expressway.entity.EmeEventResource">
-        SELECT * FROM biz_emergency_event_resource WHERE event_id = #{eventId}
+        SELECT * FROM biz_emergency_resource WHERE emergency_id = #{eventId}
+    </select>
+
+    <!-- 根据事件ID查询关联的资源ID列表 -->
+    <select id="selectResourceIdsByEventId" parameterType="java.lang.Long" resultType="java.lang.Long">
+        SELECT resource_id FROM biz_emergency_resource WHERE emergency_id = #{eventId}
     </select>
 </mapper>

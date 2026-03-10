@@ -2,14 +2,15 @@ package com.expressway.enumeration;
 
 /**
  * 时间线操作类型枚举
+ * 数据库中存储的是中文描述
  */
 public enum ActionType {
-    CONFIRM("CONFIRM", "确认"),
-    BIND("BIND", "资源绑定"),
-    SIGN("SIGN", "现场签到"),
-    REMARK("REMARK", "行动备注"),
-    ATTACHMENT("ATTACHMENT", "上传资料"),
-    CLOSED("CLOSED", "关闭事件");
+    确认("CONFIRM", "确认"),
+    资源绑定("BIND", "资源绑定"),
+    现场签到("SIGN", "现场签到"),
+    行动备注("REMARK", "行动备注"),
+    上传资料("ATTACHMENT", "上传资料"),
+    关闭事件("CLOSED", "关闭事件");
 
     private final String code;
     private final String description;

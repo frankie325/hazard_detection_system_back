@@ -11,4 +11,9 @@ public interface EmeResourceMapper {
      * 查询所有资源池列表
      */
     List<EmeResourceVO> selectAllEmeResource();
+
+    /**
+     * 根据ID列表查询资源
+     */
+    List<EmeResourceVO> selectByIds(List<Long> resourceIds);
 }
