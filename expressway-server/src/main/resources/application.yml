@@ -9,8 +9,8 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
   servlet:
     multipart:
-      max-file-size: 1MB # 最大单个文件大小
-      max-request-size: 10MB # 最大请求大小（包括所有文件和表单数据）
+      max-file-size: 10MB # 最大单个文件大小
+      max-request-size: 100MB # 最大请求大小（包括所有文件和表单数据）
 
 # mybatis相关配置
 mybatis:
