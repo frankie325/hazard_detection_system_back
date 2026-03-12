@@ -10,6 +10,7 @@ import com.expressway.enumeration.AlarmStatus;
 import com.expressway.exception.AlarmMessageException;
 import com.expressway.mapper.AlarmMessageMapper;
 import com.expressway.service.AlarmMessageService;
+import com.expressway.service.AlarmNotificationService;
 import com.expressway.service.EmeEventService;
 import com.expressway.vo.AlarmMessageVO;
 import com.github.pagehelper.PageHelper;
@@ -31,6 +32,8 @@ public class AlarmMessageServiceImpl implements AlarmMessageService {
     private AlarmMessageMapper alarmMessageMapper;
     @Autowired
     private EmeEventService emergencyEventService;
+    @Autowired
+    private AlarmNotificationService alarmNotificationService;
 
     @Override
     public PageInfo<AlarmMessageVO> getAlarmMessageList(AlarmMessageQueryParamsDTO queryParams) {
@@ -51,6 +54,11 @@ public class AlarmMessageServiceImpl implements AlarmMessageService {
         int result = alarmMessageMapper.updateAlarmMessageById(alarmMessage);
         if (result != 1) {
             throw new AlarmMessageException("修改告警消息失败");
+        }
+        
+        // 推送告警状态变更通知
+        if (updateDTO.getAlarmStatus() != null) {
+            alarmNotificationService.pushAlarmStatusUpdate(updateDTO.getId(), updateDTO.getAlarmStatus().name());
         }
     }
 
@@ -95,6 +103,9 @@ public class AlarmMessageServiceImpl implements AlarmMessageService {
         emeEventAddDTO.setDeptId(alarmConfirm.getDeptId());
         emeEventAddDTO.setAlarmId(alarmMessage.getId());
         emergencyEventService.createEmeEvent(emeEventAddDTO);
+
+        // 7.推送告警状态变更通知
+        alarmNotificationService.pushAlarmStatusUpdate(alarmMessage.getId(), AlarmStatus.PROCESSING.name());
     }
 
     @Override
@@ -104,5 +115,11 @@ public class AlarmMessageServiceImpl implements AlarmMessageService {
             throw new AlarmMessageException("告警消息不存在");
         }
         return alarmMessageVO;
+    }
+
+    @Override
+    public java.util.List<AlarmMessageVO> getAllAlarmMessages(AlarmMessageQueryParamsDTO queryParams) {
+        // 直接查询所有符合条件的告警消息，不分页
+        return alarmMessageMapper.selectAlarmMessageList(queryParams);
     }
 }

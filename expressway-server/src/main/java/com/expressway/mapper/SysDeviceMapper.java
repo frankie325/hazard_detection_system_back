@@ -49,4 +49,9 @@ public interface SysDeviceMapper {
      * 根据设备编码查询设备
      */
     SysDevice selectDeviceByCode(String deviceCode);
+
+    /**
+     * 查询所有设备实体
+     */
+    List<SysDevice> selectAllDevices();
 }

@@ -26,4 +26,9 @@ public interface AlarmMessageService {
      * 根据ID查询告警消息详情
      */
     AlarmMessageVO getAlarmMessageById(Long id);
+
+    /**
+     * 获取所有告警消息（用于导出）
+     */
+    java.util.List<AlarmMessageVO> getAllAlarmMessages(AlarmMessageQueryParamsDTO queryParams);
 }

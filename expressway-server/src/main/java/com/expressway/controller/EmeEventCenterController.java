@@ -9,6 +9,7 @@ import com.expressway.service.EmeEventService;
 import com.expressway.vo.EmeEventVO;
 import com.expressway.vo.EmeTimelineVO;
 import jakarta.annotation.Resource;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -126,6 +127,47 @@ public class EmeEventCenterController {
             return Result.error(e.getMessage());
         } catch (Exception e) {
             return Result.error("生成时间线失败：" + e.getMessage());
+        }
+    }
+
+    /**
+     * 导出事件数据
+     */
+    @GetMapping("/export")
+    public void exportEvents(HttpServletResponse response) {
+        try {
+            // 获取所有事件
+            List<EmeEventVO> events = emeEventService.getEmeEventList();
+            
+            // 设置响应头
+            response.setContentType("application/vnd.ms-excel");
+            response.setCharacterEncoding("UTF-8");
+            String fileName = "事件数据导出_" + new java.text.SimpleDateFormat("yyyyMMddHHmmss").format(new java.util.Date()) + ".xls";
+            response.setHeader("Content-Disposition", "attachment; filename=" + java.net.URLEncoder.encode(fileName, "UTF-8"));
+            
+            // 写入Excel数据
+            java.io.PrintWriter writer = response.getWriter();
+            // 写入表头
+            writer.println("事件ID\t事件名称\t事件类型\t事件等级\t事件状态\t创建时间\t更新时间\t位置\t责任部门\t关联告警ID");
+            
+            // 写入数据
+            for (EmeEventVO event : events) {
+                writer.println(event.getId() + "\t" +
+                        (event.getEventName() != null ? event.getEventName() : "") + "\t" +
+                        (event.getEventTypeName() != null ? event.getEventTypeName() : "") + "\t" +
+                        (event.getEventLevelName() != null ? event.getEventLevelName() : "") + "\t" +
+                        (event.getStatusName() != null ? event.getStatusName() : "") + "\t" +
+                        (event.getCreateTime() != null ? event.getCreateTime() : "") + "\t" +
+                        (event.getUpdateTime() != null ? event.getUpdateTime() : "") + "\t" +
+                        (event.getLocation() != null ? event.getLocation() : "") + "\t" +
+                        (event.getDeptName() != null ? event.getDeptName() : "") + "\t" +
+                        (event.getAlarmId() != null ? event.getAlarmId() : ""));
+            }
+            
+            writer.flush();
+            writer.close();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 }

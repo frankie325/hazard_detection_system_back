@@ -4,13 +4,18 @@
 <mapper namespace="com.expressway.mapper.SysDeviceMapper">
     <!-- 查询所有设备 -->
     <select id="selectAllDevice" resultType="com.expressway.vo.DeviceVO">
-        SELECT * FROM sys_device ORDER BY create_time DESC
+        SELECT id, device_name, device_code, device_type, model, install_location as location, ip_address, status, area_id, create_time, update_time FROM sys_device ORDER BY create_time DESC
+    </select>
+
+    <!-- 查询所有设备实体 -->
+    <select id="selectAllDevices" resultType="com.expressway.entity.SysDevice">
+        SELECT id, device_name, device_code, device_type, model, install_location as location, ip_address, status, area_id, create_time, update_time FROM sys_device ORDER BY create_time DESC
     </select>
 
     <!-- 根据条件分页查询设备 -->
     <select id="selectDeviceList" parameterType="com.expressway.dto.DeviceQueryParamsDTO"
             resultType="com.expressway.vo.DeviceVO">
-        SELECT d.*, a.area_name
+        SELECT d.id, d.device_name, d.device_code, d.device_type, d.model, d.install_location as location, d.ip_address, d.status, d.area_id, d.create_time, d.update_time, a.area_name
         FROM sys_device d
         LEFT JOIN sys_area a ON d.area_id = a.id
         <where>
@@ -35,17 +40,17 @@
 
     <!-- 根据ID查询设备 -->
     <select id="selectDeviceById" resultType="com.expressway.entity.SysDevice">
-        SELECT * FROM sys_device WHERE id = #{id}
+        SELECT id, device_name, device_code, device_type, model, install_location as location, ip_address, status, area_id, create_time, update_time FROM sys_device WHERE id = #{id}
     </select>
 
     <!-- 根据设备编码查询设备 -->
     <select id="selectDeviceByCode" resultType="com.expressway.entity.SysDevice">
-        SELECT * FROM sys_device WHERE device_code = #{deviceCode}
+        SELECT id, device_name, device_code, device_type, model, install_location as location, ip_address, status, area_id, create_time, update_time FROM sys_device WHERE device_code = #{deviceCode}
     </select>
 
     <!-- 新增设备 -->
     <insert id="insertDevice" parameterType="com.expressway.entity.SysDevice" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO sys_device (device_name, device_code, device_type, model, area_id, location, ip_address, alarm_rule_id, status, create_time, update_time)
+        INSERT INTO sys_device (device_name, device_code, device_type, model, area_id, install_location, ip_address, alarm_rule_id, status, create_time, update_time)
         VALUES (#{deviceName}, #{deviceCode}, #{deviceType}, #{model}, #{areaId}, #{location}, #{ipAddress}, #{alarmRuleId}, #{status}, NOW(), NOW())
     </insert>
 
@@ -58,7 +63,7 @@
             <if test="deviceType != null">device_type = #{deviceType},</if>
             <if test="model != null and model != ''">model = #{model},</if>
             <if test="areaId != null">area_id = #{areaId},</if>
-            <if test="location != null and location != ''">location = #{location},</if>
+            <if test="location != null and location != ''">install_location = #{location},</if>
             <if test="ipAddress != null and ipAddress != ''">ip_address = #{ipAddress},</if>
             <if test="alarmRuleId != null">alarm_rule_id = #{alarmRuleId},</if>
             <if test="status != null">status = #{status},</if>

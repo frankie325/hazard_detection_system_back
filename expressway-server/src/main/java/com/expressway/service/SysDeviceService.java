@@ -8,6 +8,7 @@ import com.expressway.vo.DeviceVO;
 import com.github.pagehelper.PageInfo;
 
 import java.util.List;
+import java.util.Map;
 
 public interface SysDeviceService {
     /**
@@ -39,4 +40,34 @@ public interface SysDeviceService {
      * 根据ID查询设备
      */
     SysDevice getDeviceById(Long id);
+
+    /**
+     * 重启设备
+     */
+    void restartDevice(Long deviceId);
+
+    /**
+     * 打开检测预览
+     */
+    void enableDetectionPreview(Long deviceId);
+
+    /**
+     * 关闭检测预览
+     */
+    void disableDetectionPreview(Long deviceId);
+
+    /**
+     * 获取设备实时状态
+     */
+    Map<String, Object> getDeviceRealTimeStatus(Long deviceId);
+
+    /**
+     * 获取传感器实时数据
+     */
+    Map<String, Object> getSensorRealTimeData(Long deviceId);
+
+    /**
+     * 获取设备树形结构
+     */
+    List<Map<String, Object>> getDeviceTree();
 }

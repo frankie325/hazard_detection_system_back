@@ -48,4 +48,9 @@ public interface SysAreaMapper {
      * 根据部门ID查询区域数量
      */
     int countAreaByDeptId(Long deptId);
+
+    /**
+     * 查询所有区域实体
+     */
+    List<SysArea> selectAllAreas();
 }
