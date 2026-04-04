@@ -1,5 +1,11 @@
 # 配置数据库连接信息
 spring:
+  profiles:
+    active: dev
+    group:
+      dev: local,dev
+      prod: local,prod
+
   application:
     name: expressway-system
   datasource:
