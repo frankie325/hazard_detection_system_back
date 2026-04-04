@@ -5,16 +5,19 @@ import com.expressway.dto.DeviceQueryParamsDTO;
 import com.expressway.dto.DeviceUpdateDTO;
 import com.expressway.entity.SysArea;
 import com.expressway.entity.SysDevice;
+import com.expressway.entity.SysFile;
 import com.expressway.enumeration.DeviceStatus;
 import com.expressway.exception.DeviceException;
 import com.expressway.mapper.SysAreaMapper;
 import com.expressway.mapper.SysDeviceMapper;
 import com.expressway.service.SysDeviceService;
+import com.expressway.service.SysFileService;
 import com.expressway.vo.DeviceVO;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import jakarta.annotation.Resource;
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,6 +31,9 @@ public class SysDeviceServiceImpl implements SysDeviceService {
     @Resource
     private SysAreaMapper sysAreaMapper;
 
+    @Autowired
+    private SysFileService sysFileService;
+
     /**
      * 分页查询设备列表
      */
@@ -35,7 +41,29 @@ public class SysDeviceServiceImpl implements SysDeviceService {
     public PageInfo<DeviceVO> getDeviceList(DeviceQueryParamsDTO queryParams) {
         PageHelper.startPage(queryParams.getCurrent(), queryParams.getSize());
         List<DeviceVO> deviceList = sysDeviceMapper.selectDeviceList(queryParams);
+        List<SysFile> fileList = sysFileService.getAllFiles();
+        deviceList.forEach(device -> {
+            if (device.getFileId() != null) {
+                // 找到对应的文件
+                SysFile file = fileList.stream().filter(f -> f.getId().equals(device.getFileId())).findFirst().orElse(null);
+                device.setVideoUrl(file.getFilePath());
+            }
+        });
         return new PageInfo<>(deviceList);
+    }
+
+    @Override
+    public List<DeviceVO> getAllDeviceList() {
+        List<DeviceVO> deviceList = sysDeviceMapper.selectAllDevice();
+        List<SysFile> fileList = sysFileService.getAllFiles();
+        deviceList.forEach(device -> {
+            if (device.getFileId() != null) {
+                // 找到对应的文件
+                SysFile file = fileList.stream().filter(f -> f.getId().equals(device.getFileId())).findFirst().orElse(null);
+                device.setVideoUrl(file.getFilePath());
+            }
+        });
+        return deviceList;
     }
 
     /**

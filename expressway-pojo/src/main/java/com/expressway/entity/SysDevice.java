@@ -23,4 +23,5 @@ public class SysDevice {
     private Date createTime;      // 创建时间
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private Date updateTime;      // 更新时间
+    private Long fileId;          // 关联文件ID
 }

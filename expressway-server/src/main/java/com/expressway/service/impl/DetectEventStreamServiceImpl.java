@@ -1,6 +1,7 @@
 package com.expressway.service.impl;
 
 import com.expressway.dto.DetectEventStreamQueryParamsDTO;
+import com.expressway.entity.DetectEventStream;
 import com.expressway.mapper.DetectEventStreamMapper;
 import com.expressway.service.DetectEventStreamService;
 import com.expressway.vo.DetectEventStreamVO;
@@ -22,5 +23,10 @@ public class DetectEventStreamServiceImpl implements DetectEventStreamService {
         PageHelper.startPage(queryParams.getCurrent(), queryParams.getSize());
         List<DetectEventStreamVO> list = detectEventStreamMapper.selectEventStreamList(queryParams);
         return new PageInfo<>(list);
+    }
+
+    @Override
+    public void createEventStream(DetectEventStream eventStream) {
+        detectEventStreamMapper.insert(eventStream);
     }
 }

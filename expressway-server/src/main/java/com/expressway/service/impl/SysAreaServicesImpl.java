@@ -12,6 +12,7 @@ import com.expressway.mapper.SysAreaMapper;
 import com.expressway.mapper.SysDeptMapper;
 import com.expressway.mapper.SysDeviceMapper;
 import com.expressway.service.SysAreaService;
+import com.expressway.service.SysDeviceService;
 import com.expressway.vo.AreaDeviceVO;
 import com.expressway.vo.AreaVO;
 import com.expressway.vo.DeviceVO;
@@ -35,7 +36,7 @@ public class SysAreaServicesImpl implements SysAreaService {
     private SysDeptMapper sysDeptMapper;
 
     @Resource
-    private SysDeviceMapper sysDeviceMapper;
+    private SysDeviceService sysDeviceService;
 
     /**
      * 查询所有区域列表（不分页）
@@ -53,7 +54,7 @@ public class SysAreaServicesImpl implements SysAreaService {
         // 1. 查询所有区域
         List<AreaVO> areaList = sysAreaMapper.selectAllArea();
         // 2. 查询所有设备
-        List<DeviceVO> deviceList = sysDeviceMapper.selectAllDevice();
+        List<DeviceVO> deviceList = sysDeviceService.getAllDeviceList();
 
         // 3. 封装结果
         List<AreaDeviceVO> result = new ArrayList<>();

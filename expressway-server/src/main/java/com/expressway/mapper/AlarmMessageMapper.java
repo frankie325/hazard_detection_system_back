@@ -28,4 +28,9 @@ public interface AlarmMessageMapper {
      * 根据ID查询告警消息详情
      */
     AlarmMessageVO selectAlarmMessageVOById(Long id);
+
+    /**
+     * 插入告警消息
+     */
+    int insert(AlarmMessage alarmMessage);
 }

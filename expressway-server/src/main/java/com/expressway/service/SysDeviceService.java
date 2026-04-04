@@ -4,6 +4,7 @@ import com.expressway.dto.DeviceAddDTO;
 import com.expressway.dto.DeviceQueryParamsDTO;
 import com.expressway.dto.DeviceUpdateDTO;
 import com.expressway.entity.SysDevice;
+import com.expressway.entity.SysFile;
 import com.expressway.vo.DeviceVO;
 import com.github.pagehelper.PageInfo;
 
@@ -14,7 +15,10 @@ public interface SysDeviceService {
      * 分页查询设备列表
      */
     PageInfo<DeviceVO> getDeviceList(DeviceQueryParamsDTO queryParams);
-
+    /**
+     * 查询所有设备列表
+     */
+    List<DeviceVO> getAllDeviceList();
     /**
      * 新增设备
      */

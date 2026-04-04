@@ -10,7 +10,7 @@ public class DeviceVO extends SysDevice {
     private String deviceTypeName; // 设备类型名称
     private String statusName; // 设备状态名称
     private String areaName;  // 所属区域名称
-
+    private String videoUrl; // 设备视频播放地址
     // 获取设备类型中文名称
     public String getDeviceTypeName() {
         if (getDeviceType() != null) {

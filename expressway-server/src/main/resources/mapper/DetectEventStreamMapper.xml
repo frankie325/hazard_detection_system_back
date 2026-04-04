@@ -2,6 +2,12 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
 <mapper namespace="com.expressway.mapper.DetectEventStreamMapper">
+    <!-- 插入事件流 -->
+    <insert id="insert" parameterType="com.expressway.entity.DetectEventStream" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO biz_event_stream (event_name, device_id, event_type, confidence, create_time)
+        VALUES (#{eventName}, #{deviceId}, #{eventType.code}, #{confidence}, NOW())
+    </insert>
+
     <!-- 查询事件流列表（关联区域和设备） -->
     <select id="selectEventStreamList" parameterType="com.expressway.dto.DetectEventStreamQueryParamsDTO"
             resultType="com.expressway.vo.DetectEventStreamVO">

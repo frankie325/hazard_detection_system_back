@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.expressway.mapper.SysFileMapper">
+
+    <!-- 插入文件记录 -->
+    <insert id="insert" parameterType="com.expressway.entity.SysFile" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO sys_file (file_name, file_path, file_size, file_type, bucket_name, object_key, upload_user_id, create_time)
+        VALUES (#{fileName}, #{filePath}, #{fileSize}, #{fileType}, #{bucketName}, #{objectKey}, #{uploadUserId}, NOW())
+    </insert>
+
+    <!-- 根据ID查询 -->
+    <select id="selectById" parameterType="java.lang.Long" resultType="com.expressway.entity.SysFile">
+        SELECT * FROM sys_file WHERE id = #{id}
+    </select>
+
+    <!-- 根据ID删除 -->
+    <delete id="deleteById" parameterType="java.lang.Long">
+        DELETE FROM sys_file WHERE id = #{id}
+    </delete>
+
+    <!-- 根据上传用户ID查询文件列表 -->
+    <select id="selectByUserId" parameterType="java.lang.Long" resultType="com.expressway.entity.SysFile">
+        SELECT * FROM sys_file WHERE upload_user_id = #{uploadUserId}
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 查询所有文件 -->
+    <select id="selectAll" resultType="com.expressway.entity.SysFile">
+        SELECT * FROM sys_file ORDER BY create_time DESC
+    </select>
+</mapper>

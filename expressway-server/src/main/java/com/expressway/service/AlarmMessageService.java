@@ -3,6 +3,7 @@ package com.expressway.service;
 import com.expressway.dto.AlarmConfirmDTO;
 import com.expressway.dto.AlarmMessageQueryParamsDTO;
 import com.expressway.dto.AlarmMessageUpdateDTO;
+import com.expressway.entity.AlarmMessage;
 import com.expressway.vo.AlarmMessageVO;
 import com.github.pagehelper.PageInfo;
 
@@ -26,4 +27,9 @@ public interface AlarmMessageService {
      * 根据ID查询告警消息详情
      */
     AlarmMessageVO getAlarmMessageById(Long id);
+
+    /**
+     * 创建告警消息
+     */
+    void createAlarmMessage(AlarmMessage alarmMessage);
 }

@@ -105,4 +105,9 @@ public class AlarmMessageServiceImpl implements AlarmMessageService {
         }
         return alarmMessageVO;
     }
+
+    @Override
+    public void createAlarmMessage(AlarmMessage alarmMessage) {
+        alarmMessageMapper.insert(alarmMessage);
+    }
 }

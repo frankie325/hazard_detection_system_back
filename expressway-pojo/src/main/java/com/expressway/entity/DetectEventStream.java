@@ -10,6 +10,7 @@ import java.util.Date;
 public class DetectEventStream {
     private Long id;            // 事件流id
     private String eventName;      // 事件流名称
+    private Long deviceId;         // 设备ID
     private DetectEventType eventType;      // 事件流类型
     private Float confidence;
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
