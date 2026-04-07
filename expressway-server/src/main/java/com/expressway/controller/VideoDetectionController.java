@@ -38,7 +38,7 @@ public class VideoDetectionController {
     @ApiOperation("MJPEG视频检测流接口")
     public void detectStream(
             @ApiParam(value = "设备ID", required = true)
-            @RequestParam("deviceId") String deviceId,
+            @RequestParam("deviceId") Long deviceId,
             @ApiParam(value = "视频URL", required = true)
             @RequestParam("videoUrl") String videoUrl,
             HttpServletResponse response) {

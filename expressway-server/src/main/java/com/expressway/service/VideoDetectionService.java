@@ -15,7 +15,7 @@ public interface VideoDetectionService {
      * @param videoUrl     视频URL
      * @param outputStream 输出流（用于写入MJPEG帧）
      */
-    void startMjpegStream(String deviceId, String videoUrl, OutputStream outputStream);
+    void startMjpegStream(Long deviceId, String videoUrl, OutputStream outputStream);
 
     /**
      * 获取Python检测服务地址

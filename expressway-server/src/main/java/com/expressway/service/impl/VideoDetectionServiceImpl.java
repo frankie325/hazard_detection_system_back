@@ -78,7 +78,7 @@ public class VideoDetectionServiceImpl implements VideoDetectionService {
     }
 
     @Override
-    public void startMjpegStream(String deviceId, String videoUrl, OutputStream outputStream) {
+    public void startMjpegStream(Long deviceId, String videoUrl, OutputStream outputStream) {
         String sessionId = null;
 
         try {
@@ -180,7 +180,7 @@ public class VideoDetectionServiceImpl implements VideoDetectionService {
     /**
      * 处理帧检测结果
      */
-    private void handleFrameResult(FrameResultVO frameResult, String deviceId, String sessionId) {
+    private void handleFrameResult(FrameResultVO frameResult, Long deviceId, String sessionId) {
         if (frameResult == null || frameResult.getTracks() == null) {
             return;
         }
@@ -206,18 +206,17 @@ public class VideoDetectionServiceImpl implements VideoDetectionService {
     /**
      * 创建事件流
      */
-    private void createEventStream(TrackInfoVO track, String deviceId) {
+    private void createEventStream(TrackInfoVO track, Long deviceId) {
         DetectEventType eventType = track.getType();
         String timestamp = LocalDateTime.now().format(TIMESTAMP_FORMATTER);
         String eventName = eventType.getDescription() + "-" + track.getClassName() + "-" + timestamp;
 
         // 获取设备信息
-        Long deviceIdLong = Long.parseLong(deviceId);
-        // SysDevice device = deviceService.getDeviceById(deviceIdLong);
+        // SysDevice device = deviceService.getDeviceById(deviceId);
 
         DetectEventStream eventStream = new DetectEventStream();
         eventStream.setEventName(eventName);
-        eventStream.setDeviceId(deviceIdLong);
+        eventStream.setDeviceId(deviceId);
         eventStream.setEventType(eventType);
         eventStream.setConfidence(track.getConfidence() != null ? track.getConfidence().floatValue() : null);
 
@@ -228,7 +227,7 @@ public class VideoDetectionServiceImpl implements VideoDetectionService {
     /**
      * 检查告警规则
      */
-    private void checkAlarms(List<TrackInfoVO> tracks, String deviceId, String sessionId) {
+    private void checkAlarms(List<TrackInfoVO> tracks, Long deviceId, String sessionId) {
         Set<Integer> alarmedTracks = alarmedTracksMap.get(sessionId);
         if (alarmedTracks == null) {
             return;
@@ -251,7 +250,7 @@ public class VideoDetectionServiceImpl implements VideoDetectionService {
                     continue;
                 }
 
-                // 检查事件类型是否匹配
+                // 每个检测跟踪物体和告警规则进行匹配，应用告警规则的危害类型
                 DetectEventType trackEventType = track.getType();
                 if (rule.getEventType() != trackEventType) {
                     continue;
@@ -310,7 +309,7 @@ public class VideoDetectionServiceImpl implements VideoDetectionService {
     /**
      * 创建告警消息
      */
-    private void createAlarm(TrackInfoVO track, String deviceId, AlarmRuleVO rule) {
+    private void createAlarm(TrackInfoVO track, Long deviceId, AlarmRuleVO rule) {
         DetectEventType eventType = track.getType();
         String timestamp = LocalDateTime.now().format(TIMESTAMP_FORMATTER);
         String alarmName = eventType.getDescription() + "告警-" + track.getClassName() + "-" + timestamp;
@@ -318,7 +317,7 @@ public class VideoDetectionServiceImpl implements VideoDetectionService {
         AlarmMessage alarmMessage = new AlarmMessage();
         alarmMessage.setAlarmName(alarmName);
         alarmMessage.setAlarmLevel(rule.getAlarmLevel() != null ? rule.getAlarmLevel() : AlarmLevel.MEDIUM);
-        alarmMessage.setDeviceId(Long.parseLong(deviceId));
+        alarmMessage.setDeviceId(deviceId);
         alarmMessage.setEventType(eventType);
         alarmMessage.setRuleId(rule.getId());
         alarmMessage.setAlarmStatus(AlarmStatus.OPEN);
@@ -338,7 +337,7 @@ public class VideoDetectionServiceImpl implements VideoDetectionService {
     /**
      * 启动Python检测会话
      */
-    private String startPythonSession(String deviceId, String videoUrl) throws IOException {
+    private String startPythonSession(Long deviceId, String videoUrl) throws IOException {
         String url = config.getSessionStartUrl();
 
         JSONObject bodyJson = new JSONObject();
