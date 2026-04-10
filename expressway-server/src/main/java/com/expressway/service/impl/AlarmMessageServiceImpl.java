@@ -107,7 +107,9 @@ public class AlarmMessageServiceImpl implements AlarmMessageService {
     }
 
     @Override
-    public void createAlarmMessage(AlarmMessage alarmMessage) {
+    public AlarmMessage createAlarmMessage(AlarmMessage alarmMessage) {
+        alarmMessage.setCreateTime(LocalDateTime.now());
         alarmMessageMapper.insert(alarmMessage);
+        return alarmMessage;
     }
 }

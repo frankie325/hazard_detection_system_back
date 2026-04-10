@@ -30,6 +30,7 @@ public interface AlarmMessageService {
 
     /**
      * 创建告警消息
+     * @return 创建后的告警消息（包含ID和createTime）
      */
-    void createAlarmMessage(AlarmMessage alarmMessage);
+    AlarmMessage createAlarmMessage(AlarmMessage alarmMessage);
 }

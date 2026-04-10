@@ -6,7 +6,7 @@
     <!-- 插入告警消息 -->
     <insert id="insert" parameterType="com.expressway.entity.AlarmMessage" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO biz_alarm_message (alarm_name, alarm_level, device_id, event_type, rule_id, alarm_status, create_time, update_time)
-        VALUES (#{alarmName}, #{alarmLevel.code}, #{deviceId}, #{eventType.code}, #{ruleId}, #{alarmStatus.code}, NOW(), NOW())
+        VALUES (#{alarmName}, #{alarmLevel.code}, #{deviceId}, #{eventType.code}, #{ruleId}, #{alarmStatus.code}, #{createTime}, #{createTime})
     </insert>
 
     <!-- 分页查询告警消息列表 -->
@@ -68,5 +68,38 @@
         LEFT JOIN sys_device d ON m.device_id = d.id
         LEFT JOIN biz_alarm_rule r ON m.rule_id = r.id
         WHERE m.id = #{id}
+    </select>
+
+    <!-- 统计今日告警数量 -->
+    <select id="countTodayAlarms" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM biz_alarm_message
+        WHERE DATE(create_time) = CURDATE()
+    </select>
+
+    <!-- 统计待处理告警数量 -->
+    <select id="countPendingAlarms" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM biz_alarm_message
+        WHERE alarm_status = 'OPEN'
+    </select>
+
+    <!-- 按告警等级统计告警数量 -->
+    <select id="countByAlarmLevel" resultType="com.expressway.vo.dashboard.PieChartDataVO">
+        SELECT
+            COUNT(*) AS value,
+            alarm_level AS name
+        FROM biz_alarm_message
+        GROUP BY alarm_level
+        ORDER BY value DESC
+    </select>
+
+    <!-- 按事件类型和告警等级统计告警数量 -->
+    <select id="countByEventTypeAndLevel" resultType="com.expressway.vo.dashboard.EventTypeLevelCountVO">
+        SELECT
+            event_type AS eventType,
+            alarm_level AS alarmLevel,
+            COUNT(*) AS count
+        FROM biz_alarm_message
+        GROUP BY event_type, alarm_level
+        ORDER BY event_type, alarm_level
     </select>
 </mapper>

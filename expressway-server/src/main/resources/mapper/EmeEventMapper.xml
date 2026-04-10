@@ -59,4 +59,19 @@
         </set>
         WHERE id = #{id}
     </update>
+
+    <!-- 统计活跃应急事件数量 -->
+    <select id="countActiveEvents" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM biz_emergency_event
+        WHERE status IN ('DISPATCHING', 'PROCESSING')
+    </select>
+
+    <!-- 按状态统计应急事件数量 -->
+    <select id="countByStatus" resultType="com.expressway.vo.dashboard.PieChartDataVO">
+        SELECT
+            COUNT(*) AS value,
+            status AS name
+        FROM biz_emergency_event
+        GROUP BY status
+    </select>
 </mapper>

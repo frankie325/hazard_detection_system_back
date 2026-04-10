@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 
 import java.util.Date;
+import java.util.List;
 
 @Data
 public class SysDevice {
@@ -16,7 +17,6 @@ public class SysDevice {
     private String model;   // 设备型号
     private Long areaId;          // 所属区域ID
     private String location;      // 安装位置
-    private String ipAddress;     // IP地址
     private Long alarmRuleId;     // 应用规则ID
     private DeviceStatus status;        // 状态（在线/离线/维护）
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
@@ -24,4 +24,6 @@ public class SysDevice {
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private Date updateTime;      // 更新时间
     private Long fileId;          // 关联文件ID
+    // 坐标 [经度, 纬度]，数据库类型为POINT
+    private List<Double> coordinate;
 }

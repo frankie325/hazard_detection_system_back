@@ -2,6 +2,7 @@ package com.expressway.mapper;
 
 import com.expressway.entity.EmeEvent;
 import com.expressway.vo.EmeEventVO;
+import com.expressway.vo.dashboard.PieChartDataVO;
 import org.apache.ibatis.annotations.Mapper;
 
 import java.util.List;
@@ -37,4 +38,14 @@ public interface EmeEventMapper {
      * 更新应急事件
      */
     int updateEmeEvent(EmeEvent emeEvent);
+
+    /**
+     * 统计活跃应急事件数量（DISPATCHING, PROCESSING状态）
+     */
+    Long countActiveEvents();
+
+    /**
+     * 按状态统计应急事件数量
+     */
+    List<PieChartDataVO> countByStatus();
 }

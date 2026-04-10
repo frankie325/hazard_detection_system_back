@@ -10,11 +10,13 @@ import com.expressway.entity.SysDevice;
 import com.expressway.enumeration.AlarmLevel;
 import com.expressway.enumeration.AlarmStatus;
 import com.expressway.enumeration.DetectEventType;
+import com.expressway.handler.AlarmWebSocketHandler;
 import com.expressway.service.AlarmMessageService;
 import com.expressway.service.AlarmRuleService;
 import com.expressway.service.DetectEventStreamService;
 import com.expressway.service.SysDeviceService;
 import com.expressway.service.VideoDetectionService;
+import com.expressway.vo.AlarmMessageVO;
 import com.expressway.vo.AlarmRuleVO;
 import com.expressway.vo.FrameResultVO;
 import com.expressway.vo.TrackInfoVO;
@@ -52,6 +54,7 @@ public class VideoDetectionServiceImpl implements VideoDetectionService {
     private final AlarmMessageService alarmMessageService;
     private final AlarmRuleService alarmRuleService;
     private final SysDeviceService deviceService;
+    private final AlarmWebSocketHandler alarmWebSocketHandler;
 
     private final OkHttpClient httpClient = new OkHttpClient.Builder()
             .connectTimeout(30, TimeUnit.SECONDS)
@@ -127,6 +130,8 @@ public class VideoDetectionServiceImpl implements VideoDetectionService {
                         outputStream.flush();
                     } catch (IOException e) {
                         log.debug("写入MJPEG帧失败，客户端可能已断开: {}", e.getMessage());
+                        // 立即从map中移除，让主循环退出，不再接收新消息
+                        webSocketMap.remove(finalSessionId);
                         webSocket.close(1000, "Client disconnected");
                     }
                 }
@@ -322,8 +327,13 @@ public class VideoDetectionServiceImpl implements VideoDetectionService {
         alarmMessage.setRuleId(rule.getId());
         alarmMessage.setAlarmStatus(AlarmStatus.OPEN);
 
-        alarmMessageService.createAlarmMessage(alarmMessage);
+        // 创建告警并获取ID
+        AlarmMessage createdAlarm = alarmMessageService.createAlarmMessage(alarmMessage);
         log.info("创建告警: alarmName={}, deviceId={}, className={}", alarmName, deviceId, track.getClassName());
+
+        // 通过WebSocket推送告警消息（查询完整的关联信息）
+        AlarmMessageVO alarmMessageVO = alarmMessageService.getAlarmMessageById(createdAlarm.getId());
+        alarmWebSocketHandler.pushAlarm(alarmMessageVO);
     }
 
     /**

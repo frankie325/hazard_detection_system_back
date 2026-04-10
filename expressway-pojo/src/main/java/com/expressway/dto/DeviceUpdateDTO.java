@@ -6,6 +6,8 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
+import java.util.List;
+
 /**
  * 编辑设备入参DTO
  */
@@ -31,7 +33,7 @@ public class DeviceUpdateDTO {
 
     private String location;      // 安装位置（非必填）
 
-    private String ipAddress;     // IP地址（非必填）
-
     private Long alarmRuleId;     // 应用规则ID（非必填）
+    
+    private List<Double> coordinate; // 坐标 [经度, 纬度]
 }

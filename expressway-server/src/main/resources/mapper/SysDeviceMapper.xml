@@ -2,15 +2,44 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
 <mapper namespace="com.expressway.mapper.SysDeviceMapper">
+    
+    <!-- 通用ResultMap，包含坐标类型转换 -->
+    <resultMap id="DeviceResultMap" type="com.expressway.entity.SysDevice">
+        <id property="id" column="id"/>
+        <result property="deviceName" column="device_name"/>
+        <result property="deviceCode" column="device_code"/>
+        <result property="deviceType" column="device_type"/>
+        <result property="model" column="model"/>
+        <result property="areaId" column="area_id"/>
+        <result property="location" column="location"/>
+        <result property="alarmRuleId" column="alarm_rule_id"/>
+        <result property="status" column="status"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="fileId" column="file_id"/>
+        <result property="coordinate" column="coordinate" 
+                typeHandler="com.expressway.handler.PointTypeHandler"/>
+    </resultMap>
+    
+    <!-- DeviceVO ResultMap -->
+    <resultMap id="DeviceVOResultMap" type="com.expressway.vo.DeviceVO" extends="DeviceResultMap">
+        <result property="areaName" column="area_name"/>
+    </resultMap>
+
     <!-- 查询所有设备 -->
-    <select id="selectAllDevice" resultType="com.expressway.vo.DeviceVO">
-        SELECT * FROM sys_device ORDER BY create_time DESC
+    <select id="selectAllDevice" resultMap="DeviceVOResultMap">
+        SELECT id, device_name, device_code, device_type, model, area_id, location,
+               alarm_rule_id, status, create_time, update_time, file_id,
+               ST_AsText(coordinate) AS coordinate
+        FROM sys_device ORDER BY create_time DESC
     </select>
 
     <!-- 根据条件分页查询设备 -->
     <select id="selectDeviceList" parameterType="com.expressway.dto.DeviceQueryParamsDTO"
-            resultType="com.expressway.vo.DeviceVO">
-        SELECT d.*, a.area_name
+            resultMap="DeviceVOResultMap">
+        SELECT d.id, d.device_name, d.device_code, d.device_type, d.model, d.area_id, d.location,
+               d.alarm_rule_id, d.status, d.create_time, d.update_time, d.file_id,
+               ST_AsText(d.coordinate) AS coordinate, a.area_name
         FROM sys_device d
         LEFT JOIN sys_area a ON d.area_id = a.id
         <where>
@@ -34,19 +63,28 @@
     </select>
 
     <!-- 根据ID查询设备 -->
-    <select id="selectDeviceById" resultType="com.expressway.entity.SysDevice">
-        SELECT * FROM sys_device WHERE id = #{id}
+    <select id="selectDeviceById" resultMap="DeviceResultMap">
+        SELECT id, device_name, device_code, device_type, model, area_id, location,
+               alarm_rule_id, status, create_time, update_time, file_id,
+               ST_AsText(coordinate) AS coordinate
+        FROM sys_device WHERE id = #{id}
     </select>
 
     <!-- 根据设备编码查询设备 -->
-    <select id="selectDeviceByCode" resultType="com.expressway.entity.SysDevice">
-        SELECT * FROM sys_device WHERE device_code = #{deviceCode}
+    <select id="selectDeviceByCode" resultMap="DeviceResultMap">
+        SELECT id, device_name, device_code, device_type, model, area_id, location,
+               alarm_rule_id, status, create_time, update_time, file_id,
+               ST_AsText(coordinate) AS coordinate
+        FROM sys_device WHERE device_code = #{deviceCode}
     </select>
 
     <!-- 新增设备 -->
     <insert id="insertDevice" parameterType="com.expressway.entity.SysDevice" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO sys_device (device_name, device_code, device_type, model, area_id, location, ip_address, alarm_rule_id, status, create_time, update_time)
-        VALUES (#{deviceName}, #{deviceCode}, #{deviceType}, #{model}, #{areaId}, #{location}, #{ipAddress}, #{alarmRuleId}, #{status}, NOW(), NOW())
+        INSERT INTO sys_device (device_name, device_code, device_type, model, area_id, location, alarm_rule_id, status, coordinate, create_time, update_time)
+        VALUES (#{deviceName}, #{deviceCode}, #{deviceType}, #{model}, #{areaId}, #{location}, #{alarmRuleId}, #{status},
+                <if test="coordinate != null">ST_GeomFromText(#{coordinate, typeHandler=com.expressway.handler.PointTypeHandler})</if>
+                <if test="coordinate == null">NULL</if>,
+                NOW(), NOW())
     </insert>
 
     <!-- 更新设备 -->
@@ -59,9 +97,9 @@
             <if test="model != null and model != ''">model = #{model},</if>
             <if test="areaId != null">area_id = #{areaId},</if>
             <if test="location != null and location != ''">location = #{location},</if>
-            <if test="ipAddress != null and ipAddress != ''">ip_address = #{ipAddress},</if>
             <if test="alarmRuleId != null">alarm_rule_id = #{alarmRuleId},</if>
             <if test="status != null">status = #{status},</if>
+            <if test="coordinate != null">coordinate = ST_GeomFromText(#{coordinate, typeHandler=com.expressway.handler.PointTypeHandler}),</if>
             update_time = NOW()
         </set>
         WHERE id = #{id}
@@ -79,4 +117,9 @@
             #{id}
         </foreach>
     </delete>
+
+    <!-- 统计设备总数 -->
+    <select id="countAllDevices" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM sys_device
+    </select>
 </mapper>
