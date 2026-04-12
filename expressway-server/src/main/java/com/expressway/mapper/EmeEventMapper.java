@@ -48,4 +48,14 @@ public interface EmeEventMapper {
      * 按状态统计应急事件数量
      */
     List<PieChartDataVO> countByStatus();
+
+    /**
+     * 统计今日事件数量
+     */
+    Long countTodayEvents();
+
+    /**
+     * 按事件类型统计数量
+     */
+    List<PieChartDataVO> countByEventType();
 }

@@ -3,6 +3,7 @@ package com.expressway.mapper;
 import com.expressway.dto.DeviceQueryParamsDTO;
 import com.expressway.entity.SysDevice;
 import com.expressway.vo.DeviceVO;
+import com.expressway.vo.dashboard.PieChartDataVO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -54,4 +55,14 @@ public interface SysDeviceMapper {
      * 统计设备总数
      */
     Long countAllDevices();
+
+    /**
+     * 统计在线设备数量
+     */
+    Long countOnlineDevices();
+
+    /**
+     * 按设备状态统计数量
+     */
+    List<PieChartDataVO> countByStatus();
 }

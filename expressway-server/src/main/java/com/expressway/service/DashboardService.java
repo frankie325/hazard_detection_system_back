@@ -1,6 +1,7 @@
 package com.expressway.service;
 
 import com.expressway.vo.dashboard.DashboardOverviewVO;
+import com.expressway.vo.dashboard.WorkbenchOverviewVO;
 import com.expressway.vo.dashboard.HistogramChartVO;
 import com.expressway.vo.dashboard.PieChartDataVO;
 import com.expressway.vo.dashboard.StackBarChartVO;
@@ -30,4 +31,19 @@ public interface DashboardService {
      * 获取事件状态统计直方图
      */
     HistogramChartVO getEventStatusStats();
+
+    /**
+     * 获取设备概览统计数据
+     */
+    WorkbenchOverviewVO getDeviceOverview();
+
+    /**
+     * 获取事件类型统计（环形图）
+     */
+    List<PieChartDataVO> getEventTypeStats();
+
+    /**
+     * 获取设备状态统计（柱状图）
+     */
+    HistogramChartVO getDeviceStatusStats();
 }

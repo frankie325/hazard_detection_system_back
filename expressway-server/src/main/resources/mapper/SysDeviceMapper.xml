@@ -122,4 +122,18 @@
     <select id="countAllDevices" resultType="java.lang.Long">
         SELECT COUNT(*) FROM sys_device
     </select>
+
+    <!-- 统计在线设备数量 -->
+    <select id="countOnlineDevices" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM sys_device WHERE status = 'ONLINE'
+    </select>
+
+    <!-- 按设备状态统计数量 -->
+    <select id="countByStatus" resultType="com.expressway.vo.dashboard.PieChartDataVO">
+        SELECT
+            COUNT(*) AS value,
+            status AS name
+        FROM sys_device
+        GROUP BY status
+    </select>
 </mapper>

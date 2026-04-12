@@ -102,4 +102,9 @@
         GROUP BY event_type, alarm_level
         ORDER BY event_type, alarm_level
     </select>
+
+    <!-- 统计告警总数 -->
+    <select id="countAllAlarms" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM biz_alarm_message
+    </select>
 </mapper>

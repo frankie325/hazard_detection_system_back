@@ -55,4 +55,9 @@ public interface AlarmMessageMapper {
      * 按事件类型和告警等级统计告警数量
      */
     List<EventTypeLevelCountVO> countByEventTypeAndLevel();
+
+    /**
+     * 统计告警总数
+     */
+    Long countAllAlarms();
 }

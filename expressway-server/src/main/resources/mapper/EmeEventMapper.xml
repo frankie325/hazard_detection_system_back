@@ -74,4 +74,19 @@
         FROM biz_emergency_event
         GROUP BY status
     </select>
+
+    <!-- 统计今日事件数量 -->
+    <select id="countTodayEvents" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM biz_emergency_event
+        WHERE DATE(create_time) = CURDATE()
+    </select>
+
+    <!-- 按事件类型统计数量 -->
+    <select id="countByEventType" resultType="com.expressway.vo.dashboard.PieChartDataVO">
+        SELECT
+            COUNT(*) AS value,
+            event_type AS name
+        FROM biz_emergency_event
+        GROUP BY event_type
+    </select>
 </mapper>

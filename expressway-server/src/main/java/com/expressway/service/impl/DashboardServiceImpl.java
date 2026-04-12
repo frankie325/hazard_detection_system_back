@@ -2,12 +2,14 @@ package com.expressway.service.impl;
 
 import com.expressway.enumeration.AlarmLevel;
 import com.expressway.enumeration.DetectEventType;
+import com.expressway.enumeration.DeviceStatus;
 import com.expressway.enumeration.EmeEventStatus;
 import com.expressway.mapper.AlarmMessageMapper;
 import com.expressway.mapper.EmeEventMapper;
 import com.expressway.mapper.SysDeviceMapper;
 import com.expressway.service.DashboardService;
 import com.expressway.vo.dashboard.DashboardOverviewVO;
+import com.expressway.vo.dashboard.WorkbenchOverviewVO;
 import com.expressway.vo.dashboard.EventTypeLevelCountVO;
 import com.expressway.vo.dashboard.HistogramChartVO;
 import com.expressway.vo.dashboard.PieChartDataVO;
@@ -68,6 +70,15 @@ public class DashboardServiceImpl implements DashboardService {
             EmeEventStatus.DISPATCHING,
             EmeEventStatus.PROCESSING,
             EmeEventStatus.CLOSED
+    );
+
+    /**
+     * 固定的设备状态顺序
+     */
+    private static final List<DeviceStatus> DEVICE_STATUS_ORDER = Arrays.asList(
+            DeviceStatus.ONLINE,
+            DeviceStatus.OFFLINE,
+            DeviceStatus.MAINTENANCE
     );
 
     @Override
@@ -182,6 +193,83 @@ public class DashboardServiceImpl implements DashboardService {
         result.setData(data);
 
         log.info("事件状态统计完成");
+        return result;
+    }
+
+    @Override
+    public WorkbenchOverviewVO getDeviceOverview() {
+        WorkbenchOverviewVO overview = new WorkbenchOverviewVO();
+
+        // 1. 查询设备总数
+        Long deviceCount = sysDeviceMapper.countAllDevices();
+        overview.setDeviceCount(deviceCount != null ? deviceCount : 0L);
+
+        // 2. 查询在线设备数
+        Long onlineDeviceCount = sysDeviceMapper.countOnlineDevices();
+        overview.setOnlineDeviceCount(onlineDeviceCount != null ? onlineDeviceCount : 0L);
+
+        // 3. 查询告警总数
+        Long alarmCount = alarmMessageMapper.countAllAlarms();
+        overview.setAlarmCount(alarmCount != null ? alarmCount : 0L);
+
+        // 4. 查询今日事件数
+        Long todayEventCount = emeEventMapper.countTodayEvents();
+        overview.setTodayEventCount(todayEventCount != null ? todayEventCount : 0L);
+
+        log.info("设备概览统计: 设备总数={}, 在线设备={}, 告警总数={}, 今日事件={}",
+                overview.getDeviceCount(), overview.getOnlineDeviceCount(),
+                overview.getAlarmCount(), overview.getTodayEventCount());
+
+        return overview;
+    }
+
+    @Override
+    public List<PieChartDataVO> getEventTypeStats() {
+        List<PieChartDataVO> rawData = emeEventMapper.countByEventType();
+
+        // 构建映射表：eventType -> count
+        Map<String, Long> dataMap = new HashMap<>();
+        for (PieChartDataVO item : rawData) {
+            dataMap.put(item.getName(), item.getValue());
+        }
+
+        // 按枚举顺序构建结果，确保所有事件类型都返回
+        List<PieChartDataVO> stats = new ArrayList<>();
+        for (DetectEventType eventType : EVENT_TYPE_ORDER) {
+            stats.add(new PieChartDataVO(
+                    dataMap.getOrDefault(eventType.getCode(), 0L),
+                    eventType.getDescription()
+            ));
+        }
+
+        log.info("事件类型统计: 共{}种类型", stats.size());
+        return stats;
+    }
+
+    @Override
+    public HistogramChartVO getDeviceStatusStats() {
+        // 查询数据库
+        List<PieChartDataVO> rawData = sysDeviceMapper.countByStatus();
+
+        // 构建映射表：status -> count
+        Map<String, Long> dataMap = new HashMap<>();
+        for (PieChartDataVO item : rawData) {
+            dataMap.put(item.getName(), item.getValue());
+        }
+
+        // 构建x轴（状态描述）和data
+        List<String> xAxis = new ArrayList<>();
+        List<Long> data = new ArrayList<>();
+        for (DeviceStatus status : DEVICE_STATUS_ORDER) {
+            xAxis.add(status.getDescription());
+            data.add(dataMap.getOrDefault(status.getCode(), 0L));
+        }
+
+        HistogramChartVO result = new HistogramChartVO();
+        result.setXAxis(xAxis);
+        result.setData(data);
+
+        log.info("设备状态统计完成");
         return result;
     }
 }
