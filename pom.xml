@@ -194,12 +194,6 @@
                             </exclude>
                         </excludes>
                     </configuration>
-                    <executions>
-                        <execution>
-                            <id>repackage</id>
-                            <phase>none</phase> <!-- 父模块禁用repackage -->
-                        </execution>
-                    </executions>
                 </plugin>
             </plugins>
         </pluginManagement>
